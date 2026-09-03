@@ -1,0 +1,56 @@
+{
+  "image": "prueba.jpeg",
+  "triangle_count": 600,
+  "best_fitness": 0.044293278374654,
+  "fitness_components": {
+    "color": 0.04112342558801174,
+    "edge": 0.02462459309026599,
+    "ssim": 0.09525344249445161,
+    "total": 0.044293278374653994
+  },
+  "generations_completed": 5000,
+  "elapsed_seconds": 37.21198699157685,
+  "stop_reason": "maximum_generations",
+  "backend": "CUDA (NVIDIA GeForce RTX 5090)",
+  "config": {
+    "population_size": 64,
+    "generations": 5000,
+    "mutation_probability": 0.75,
+    "crossover_probability": 0.55,
+    "elite_size": 3,
+    "random_injection": 2,
+    "stop_error": 0.02,
+    "patience": 800,
+    "evaluation_size": 120,
+    "initial_evaluation_size": 48,
+    "seed": 42,
+    "use_gpu": true,
+    "selection": "tournament_probabilistic",
+    "crossover": "region",
+    "mutation": "triangle",
+    "survival": "exclusive",
+    "tournament_size": 4,
+    "tournament_probability": 0.8,
+    "ranking_pressure": 1.5,
+    "boltzmann_temperature": 1.0,
+    "boltzmann_min_temperature": 0.1,
+    "color_weight": 0.55,
+    "edge_weight": 0.3,
+    "ssim_weight": 0.15,
+    "detail_boost": 4.0,
+    "pyramid_scales": [
+      0.5,
+      1.0
+    ],
+    "pyramid_weights": [
+      0.25,
+      0.75
+    ],
+    "resolution_change_fractions": [
+      0.35,
+      0.65
+    ],
+    "target_guided_initialization": true,
+    "progress": true
+  }
+}
