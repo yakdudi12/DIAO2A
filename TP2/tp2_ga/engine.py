@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 from tqdm.auto import tqdm
 
-from .fitness import FitnessEvaluator
+from .fitness import FitnessEvaluator, gradient
 from .operators import (
     CROSSOVER_METHODS,
     MUTATION_METHODS,
@@ -29,19 +29,19 @@ class GAConfig:
     population_size: int = 50
     generations: int = 5_000
     mutation_probability: float = 0.20
-    crossover_probability: float = 0.80
+    crossover_probability: float = 0.65
     elite_size: int = 5
     random_injection: int = 2
     stop_error: float = 0.001
     patience: int = 500
     evaluation_size: int = 64
-    initial_evaluation_size: int | None = 32
+    initial_evaluation_size: int | None = 48
     seed: int | None = 42
     use_gpu: bool = True
 
     selection: str = "ranking"
-    crossover: str = "uniform"
-    mutation: str = "non_uniform"
+    crossover: str = "region"
+    mutation: str = "triangle"
     survival: str = "exclusive"
 
     tournament_size: int = 3
@@ -50,8 +50,14 @@ class GAConfig:
     boltzmann_temperature: float = 1.0
     boltzmann_min_temperature: float = 0.1
 
-    edge_weight: float = 0.15
+    color_weight: float = 0.55
+    edge_weight: float = 0.30
     ssim_weight: float = 0.15
+    detail_boost: float = 4.0
+    pyramid_scales: tuple[float, ...] = (0.5, 1.0)
+    pyramid_weights: tuple[float, ...] = (0.25, 0.75)
+    resolution_change_fractions: tuple[float, float] = (0.35, 0.65)
+    target_guided_initialization: bool = True
     progress: bool = True
 
     def validate(self) -> None:
@@ -88,8 +94,23 @@ class GAConfig:
             raise ValueError("Parámetros de torneo inválidos")
         if not 1 <= self.ranking_pressure <= 2:
             raise ValueError("ranking_pressure debe estar entre 1 y 2")
-        if self.edge_weight < 0 or self.ssim_weight < 0:
+        if self.color_weight < 0 or self.edge_weight < 0 or self.ssim_weight < 0:
             raise ValueError("Los pesos del fitness no pueden ser negativos")
+        if self.color_weight + self.edge_weight + self.ssim_weight <= 0:
+            raise ValueError("Al menos un peso del fitness debe ser positivo")
+        if self.detail_boost < 0:
+            raise ValueError("detail_boost no puede ser negativo")
+        if (
+            not self.pyramid_scales
+            or len(self.pyramid_scales) != len(self.pyramid_weights)
+            or min(self.pyramid_scales) <= 0
+            or min(self.pyramid_weights) < 0
+            or sum(self.pyramid_weights) <= 0
+        ):
+            raise ValueError("La pirámide de fitness es inválida")
+        first_change, final_change = self.resolution_change_fractions
+        if not 0 < first_change < final_change < 1:
+            raise ValueError("Las fracciones de resolución deben ser crecientes y estar en (0, 1)")
 
 
 @dataclass(slots=True)
@@ -125,8 +146,12 @@ class GeneticImageGA:
             self.target,
             self.triangle_count,
             use_gpu=self.config.use_gpu,
+            color_weight=self.config.color_weight,
             edge_weight=self.config.edge_weight,
             ssim_weight=self.config.ssim_weight,
+            detail_boost=self.config.detail_boost,
+            pyramid_scales=self.config.pyramid_scales,
+            pyramid_weights=self.config.pyramid_weights,
         )
         self.population: list[np.ndarray] = []
         self.fitness: list[float] = []
@@ -137,12 +162,44 @@ class GeneticImageGA:
     def initial_size(self) -> int:
         return self.config.initial_evaluation_size or self.config.evaluation_size
 
-    def initialize_random_population(self) -> None:
-        """Inicialización sin información del objetivo: todos los genes son uniformes."""
-        matrix = self.rng.random(
-            (self.config.population_size, self.gene_count), dtype=np.float64
+    def _target_guides(self, amount: int = 4096) -> tuple[np.ndarray, np.ndarray]:
+        """Muestra centros preferentemente en bordes, conservando exploración global."""
+        rgb = np.asarray(self.target, dtype=np.float64) / 255.0
+        gray = np.asarray(self.target.convert("L"), dtype=np.float64) / 255.0
+        detail = gradient(gray)
+        probabilities = (0.15 + detail / max(float(detail.max()), 1e-8)).ravel()
+        probabilities /= probabilities.sum()
+        indices = self.rng.choice(rgb.shape[0] * rgb.shape[1], amount, p=probabilities)
+        rows, columns = np.unravel_index(indices, gray.shape)
+        points = np.column_stack((columns / max(1, rgb.shape[1] - 1), rows / max(1, rgb.shape[0] - 1)))
+        return points, rgb[rows, columns]
+
+    def _new_individual(self) -> np.ndarray:
+        if not self.config.target_guided_initialization:
+            return self.rng.random(self.gene_count)
+        blocks = np.empty((self.triangle_count, self.genes_per_triangle), dtype=np.float64)
+        guide_indices = self.rng.integers(0, len(self.guide_points), size=self.triangle_count)
+        centers = self.guide_points[guide_indices]
+        # Una minoría de triángulos globales modela masas; el resto queda disponible para detalle.
+        global_mask = self.rng.random(self.triangle_count) < 0.20
+        radii = np.clip(self.rng.lognormal(-2.6, 0.75, self.triangle_count), 0.008, 0.28)
+        radii[global_mask] = self.rng.uniform(0.22, 0.65, global_mask.sum())
+        angles = self.rng.uniform(0.0, 2.0 * np.pi, size=(self.triangle_count, 3))
+        points = centers[:, None, :] + np.stack((np.cos(angles), np.sin(angles)), axis=2) * radii[:, None, None]
+        blocks[:, :6] = np.clip(points, 0.0, 1.0).reshape(self.triangle_count, 6)
+        blocks[:, 6:9] = np.clip(
+            self.guide_colors[guide_indices] + self.rng.normal(0.0, 0.08, size=(self.triangle_count, 3)),
+            0.0,
+            1.0,
         )
-        self.population = [row.copy() for row in matrix]
+        blocks[:, 9] = self.rng.uniform(0.18, 0.72, self.triangle_count)
+        # El orden es parte del fenotipo: masas grandes abajo, detalle fino arriba.
+        return blocks[np.argsort(radii)[::-1]].reshape(-1)
+
+    def initialize_random_population(self) -> None:
+        """Inicializa con triángulos locales/globales y colores cercanos al objetivo."""
+        self.guide_points, self.guide_colors = self._target_guides()
+        self.population = [self._new_individual() for _ in range(self.config.population_size)]
 
     def genes_to_triangles(self, genes: np.ndarray):
         blocks = np.asarray(genes).reshape(self.triangle_count, self.genes_per_triangle)
@@ -165,10 +222,23 @@ class GeneticImageGA:
         if self.initial_size >= self.config.evaluation_size:
             return {}
         intermediate = round((self.initial_size + self.config.evaluation_size) / 2)
+        first_change, final_change = self.config.resolution_change_fractions
         return {
-            int(self.config.generations * 0.60): intermediate,
-            int(self.config.generations * 0.85): self.config.evaluation_size,
+            int(self.config.generations * first_change): intermediate,
+            int(self.config.generations * final_change): self.config.evaluation_size,
         }
+
+    def _phenotype_diversity(self, size: int) -> int:
+        """Diversidad tras cuantizar como el rasterizador, no floats casi equivalentes."""
+        signatures = set()
+        for individual in self.population:
+            blocks = individual.reshape(self.triangle_count, self.genes_per_triangle)
+            quantized = np.empty_like(blocks, dtype=np.int16)
+            quantized[:, 0:6:2] = np.rint(blocks[:, 0:6:2] * (size - 1))
+            quantized[:, 1:6:2] = np.rint(blocks[:, 1:6:2] * (size - 1))
+            quantized[:, 6:] = np.rint(blocks[:, 6:] * 255)
+            signatures.add(quantized.tobytes())
+        return len(signatures)
 
     def _selection_indices(self, amount: int, generation: int) -> np.ndarray:
         return select_indices(
@@ -211,6 +281,8 @@ class GeneticImageGA:
                     generation,
                     self.config.generations,
                     self.rng,
+                    guide_points=self.guide_points,
+                    guide_colors=self.guide_colors,
                 )
             )
             if len(children) < amount:
@@ -222,6 +294,8 @@ class GeneticImageGA:
                         generation,
                         self.config.generations,
                         self.rng,
+                        guide_points=self.guide_points,
+                        guide_colors=self.guide_colors,
                     )
                 )
         return children
@@ -236,7 +310,7 @@ class GeneticImageGA:
 
         history = [self.best_fitness]
         resolution_history = [current_size]
-        diversity_history = [len({individual.tobytes() for individual in self.population})]
+        diversity_history = [self._phenotype_diversity(current_size)]
         snapshots = [(0, self.best_fitness, self.best_genes.copy())]
         snapshot_generations = {
             round(self.config.generations * fraction)
@@ -280,10 +354,7 @@ class GeneticImageGA:
             evolved_children = self._create_children(
                 generation, slots - self.config.random_injection
             )
-            random_children = [
-                self.rng.random(self.gene_count)
-                for _ in range(self.config.random_injection)
-            ]
+            random_children = [self._new_individual() for _ in range(self.config.random_injection)]
             children = evolved_children + random_children
             child_fitness = self.evaluator.evaluate_many(children, current_size)
             survivors, survivor_fitness = choose_survivors(
@@ -301,9 +372,7 @@ class GeneticImageGA:
             generations_completed = generation + 1
             history.append(self.best_fitness)
             resolution_history.append(current_size)
-            diversity_history.append(
-                len({individual.tobytes() for individual in self.population})
-            )
+            diversity_history.append(self._phenotype_diversity(current_size))
             if generations_completed in snapshot_generations:
                 snapshots.append(
                     (generations_completed, self.best_fitness, self.best_genes.copy())
@@ -330,9 +399,23 @@ class GeneticImageGA:
                 stop_reason = "stagnation"
                 break
 
+        # CUDA y Pillow difieren levemente en las reglas de borde/alpha. Como la imagen
+        # exportada usa Pillow, se reordena una vez la población final con ese renderer.
+        final_fitness = self.evaluator.evaluate_many_cpu(
+            self.population, self.config.evaluation_size
+        )
+        final_index = int(np.argmin(final_fitness))
+        self.best_fitness = float(final_fitness[final_index])
+        self.best_genes = self.population[final_index].copy()
+        history[-1] = self.best_fitness
+
         if not snapshots or snapshots[-1][0] != generations_completed:
             snapshots.append(
                 (generations_completed, self.best_fitness, self.best_genes.copy())
+            )
+        else:
+            snapshots[-1] = (
+                generations_completed, self.best_fitness, self.best_genes.copy()
             )
         elapsed = time.perf_counter() - start
         return RunResult(

@@ -183,7 +183,8 @@ def render_population_cuda(genes: np.ndarray, triangle_count: int, size):
     if not cuda_available():
         raise RuntimeError("CUDA no está disponible")
     width, height = map(int, size)
-    genes_gpu = cp.ascontiguousarray(genes, dtype=cp.float32)
+    # CuPy 14 ya no acepta siempre un ndarray de NumPy directamente aquí.
+    genes_gpu = cp.ascontiguousarray(cp.asarray(genes, dtype=cp.float32))
     if genes_gpu.ndim == 1:
         genes_gpu = genes_gpu[None, :]
     batch = int(genes_gpu.shape[0])
