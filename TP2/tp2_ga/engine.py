@@ -57,7 +57,7 @@ class GAConfig:
     pyramid_scales: tuple[float, ...] = (0.5, 1.0)
     pyramid_weights: tuple[float, ...] = (0.25, 0.75)
     resolution_change_fractions: tuple[float, float] = (0.35, 0.65)
-    target_guided_initialization: bool = True
+    target_guided_initialization: bool = False
     progress: bool = True
 
     def validate(self) -> None:
@@ -197,8 +197,15 @@ class GeneticImageGA:
         return blocks[np.argsort(radii)[::-1]].reshape(-1)
 
     def initialize_random_population(self) -> None:
-        """Inicializa con triángulos locales/globales y colores cercanos al objetivo."""
-        self.guide_points, self.guide_colors = self._target_guides()
+        """Inicializa la población usando exclusivamente el generador de la corrida."""
+        if self.config.target_guided_initialization:
+            self.guide_points, self.guide_colors = self._target_guides()
+        else:
+            # No se consulta el objetivo ni se consume RNG antes de crear la población.
+            # Así, para una seed y dimensiones dadas, la generación 0 es idéntica
+            # independientemente de la imagen que se quiera aproximar.
+            self.guide_points = None
+            self.guide_colors = None
         self.population = [self._new_individual() for _ in range(self.config.population_size)]
 
     def genes_to_triangles(self, genes: np.ndarray):

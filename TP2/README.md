@@ -46,10 +46,10 @@ grupos espacialmente coherentes; la mutación por triángulo traslada, escala, m
 vértices, color y alpha, puede reemplazar un triángulo por uno pequeño y ocasionalmente
 cambia el orden de capas. Los métodos exigidos por el enunciado siguen disponibles.
 
-La inicialización guiada crea una mezcla de triángulos globales y locales. Sus centros se
-muestrean con mayor probabilidad cerca de bordes y sus colores parten del objetivo. Puede
-desactivarse con `target_guided_initialization=False` para experimentar con una población
-uniforme sin información previa.
+Por defecto, la generación 0 es uniforme en `[0, 1]`: depende únicamente de `seed` y no
+consulta la imagen objetivo. La inicialización guiada sigue disponible como opción con
+`target_guided_initialization=True`; crea una mezcla de triángulos globales y locales,
+muestrea centros preferentemente cerca de bordes y toma colores del objetivo.
 
 ## Fitness y resolución
 

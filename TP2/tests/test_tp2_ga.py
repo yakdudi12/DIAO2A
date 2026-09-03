@@ -42,6 +42,52 @@ class OperatorTests(unittest.TestCase):
 
 
 class EngineTests(unittest.TestCase):
+    def test_random_initialization_depends_only_on_seed(self):
+        config = GAConfig(
+            population_size=4,
+            generations=2,
+            evaluation_size=16,
+            initial_evaluation_size=None,
+            elite_size=1,
+            random_injection=1,
+            seed=1234,
+            target_guided_initialization=False,
+            use_gpu=False,
+            progress=False,
+        )
+        dark_ga = GeneticImageGA(Image.new("RGB", (24, 24), "black"), 6, config)
+        bright_ga = GeneticImageGA(Image.new("RGB", (48, 16), "white"), 6, config)
+
+        dark_ga.initialize_random_population()
+        bright_ga.initialize_random_population()
+
+        for dark_individual, bright_individual in zip(
+            dark_ga.population, bright_ga.population
+        ):
+            np.testing.assert_array_equal(dark_individual, bright_individual)
+            self.assertTrue(np.all((0.0 <= dark_individual) & (dark_individual < 1.0)))
+
+    def test_random_initialization_changes_with_seed(self):
+        target = Image.new("RGB", (24, 24), "black")
+        base = dict(
+            population_size=2,
+            generations=2,
+            evaluation_size=16,
+            initial_evaluation_size=None,
+            elite_size=1,
+            random_injection=0,
+            target_guided_initialization=False,
+            use_gpu=False,
+            progress=False,
+        )
+        first = GeneticImageGA(target, 3, GAConfig(seed=1, **base))
+        second = GeneticImageGA(target, 3, GAConfig(seed=2, **base))
+
+        first.initialize_random_population()
+        second.initialize_random_population()
+
+        self.assertFalse(np.array_equal(first.population[0], second.population[0]))
+
     def test_guided_initialization_has_local_triangles(self):
         target = Image.new("RGB", (24, 24), (120, 80, 40))
         config = GAConfig(
@@ -51,6 +97,7 @@ class EngineTests(unittest.TestCase):
             initial_evaluation_size=None,
             elite_size=1,
             random_injection=1,
+            target_guided_initialization=True,
             use_gpu=False,
             progress=False,
         )
