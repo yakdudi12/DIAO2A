@@ -2,6 +2,11 @@
 
 Este proyecto usa **Python** y **uv**.
 
+## Trabajos prácticos
+
+- [TP1](TP1/)
+- [TP2 - Algoritmos genéticos con triángulos](TP2/README.md)
+
 `uv` prepara automáticamente Python y las librerías necesarias para el trabajo práctico. También crea un entorno separado para evitar conflictos con otros proyectos.
 
 ## 1. Instalar uv
