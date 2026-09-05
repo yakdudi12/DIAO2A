@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Callable
 
 import numpy as np
 from PIL import Image
@@ -307,7 +308,14 @@ class GeneticImageGA:
                 )
         return children
 
-    def run(self) -> RunResult:
+    def run(
+        self,
+        *,
+        progress_desc: str = "Evolución AG",
+        progress_position: int = 0,
+        progress_leave: bool = True,
+        progress_callback: Callable[[int, float, int, int], None] | None = None,
+    ) -> RunResult:
         """Ejecuta una corrida independiente y devuelve métricas estructuradas."""
         start = time.perf_counter()
         self.rng = np.random.default_rng(self.config.seed)
@@ -329,20 +337,24 @@ class GeneticImageGA:
         stop_reason = "maximum_generations"
         generations_completed = 0
 
-        progress = tqdm(
-            range(self.config.generations),
-            desc="Evolución AG",
-            unit="gen",
-            dynamic_ncols=True,
-            disable=not self.config.progress,
-        )
+        progress = range(self.config.generations)
+        if self.config.progress and progress_callback is None:
+            progress = tqdm(
+                progress,
+                desc=progress_desc,
+                unit="gen",
+                dynamic_ncols=True,
+                position=progress_position,
+                leave=progress_leave,
+            )
         for generation in progress:
             if generation in schedule and schedule[generation] != current_size:
                 current_size = schedule[generation]
                 self._evaluate_population(current_size)
                 previous_best = self.best_fitness
                 stagnation = 0
-                tqdm.write(f"Evaluación aumentada a lado {current_size}")
+                if self.config.progress and progress_callback is None:
+                    progress.write(f"Evaluación aumentada a lado {current_size}")
 
             elite_indices = np.argsort(self.fitness)[: self.config.elite_size]
             elites = [self.population[index].copy() for index in elite_indices]
@@ -391,11 +403,23 @@ class GeneticImageGA:
             else:
                 stagnation += 1
 
-            if generation % 10 == 0 or generations_completed == self.config.generations:
+            if (
+                self.config.progress
+                and progress_callback is None
+                and (generation % 10 == 0 or generations_completed == self.config.generations)
+            ):
                 progress.set_postfix(
                     error=f"{self.best_fitness:.6f}",
                     res=current_size,
                     sin_mejora=stagnation,
+                )
+
+            if progress_callback is not None:
+                progress_callback(
+                    generations_completed,
+                    self.best_fitness,
+                    current_size,
+                    stagnation,
                 )
 
             final_resolution = current_size == self.config.evaluation_size

@@ -1,6 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
@@ -42,6 +43,26 @@ class OperatorTests(unittest.TestCase):
 
 
 class EngineTests(unittest.TestCase):
+    def test_external_progress_does_not_create_an_internal_bar(self):
+        config = GAConfig(
+            population_size=2,
+            generations=2,
+            evaluation_size=16,
+            initial_evaluation_size=None,
+            elite_size=1,
+            random_injection=0,
+            use_gpu=False,
+            progress=True,
+        )
+        ga = GeneticImageGA(Image.new("RGB", (16, 16), "black"), 2, config)
+        updates = []
+
+        with patch("tp2_ga.engine.tqdm") as internal_tqdm:
+            ga.run(progress_callback=lambda *values: updates.append(values))
+
+        internal_tqdm.assert_not_called()
+        self.assertEqual([values[0] for values in updates], [1, 2])
+
     def test_random_initialization_depends_only_on_seed(self):
         config = GAConfig(
             population_size=4,

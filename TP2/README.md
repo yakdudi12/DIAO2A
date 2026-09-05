@@ -19,6 +19,22 @@ kernel.
 La imagen se configura mediante `IMAGE_NAME` y debe existir en
 `TP2/imagenesprueba/`. La cantidad de triángulos se configura con `TRIANGLE_COUNT`.
 
+## Benchmark con múltiples imágenes
+
+La sección **Benchmark masivo con Picsum** del notebook descarga y cachea una cantidad
+configurable de imágenes, las recorta al centro a 120×120 y ejecuta tres semillas por
+imagen. Sus variables principales son `IMAGE_COUNT`, `BENCHMARK_PROFILE`,
+`BENCHMARK_SEEDS` y `RUN_BENCHMARK`. El perfil `quick` usa 500 generaciones y el perfil
+`full`, 15.000.
+
+Las descargas quedan en `TP2/benchmark_cache/`. Cada ejecución crea un directorio
+fechado dentro de `TP2/benchmark_results/<perfil>/`, con artefactos por corrida,
+`runs.csv`, `per_image.csv`, `summary.json`, un dashboard, una galería comparativa,
+distribuciones de calidad y un resumen visual de robustez. El
+manifiesto del caché permite repetir el experimento sobre los mismos IDs de Picsum.
+Durante la ejecución se reutiliza una sola barra `tqdm`, que muestra el progreso global
+en generaciones y el estado de la imagen/seed actual sin apilar barras en Jupyter.
+
 ## Estructura
 
 ```text

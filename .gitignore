@@ -175,3 +175,5 @@ pyrightconfig.json
 
 # Manually added
 tmp/
+TP2/benchmark_cache/
+TP2/benchmark_results/
