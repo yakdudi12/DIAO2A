@@ -25,6 +25,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from IPython.display import Image as NotebookImage
 
 PROJECT_DIR = Path.cwd()
@@ -245,7 +246,7 @@ print(metrics_output.resolve())
 # In[20]:
 RUN_COMPARISON = True
 
-if RUN_COMPARISON:
+if RUN_COMPARISON:    
     rows = []
     for selection_method in ['ranking', 'tournament_deterministic', 'roulette']:
         for crossover_method in ['one_point','two_point','uniform','region']:
@@ -265,16 +266,23 @@ if RUN_COMPARISON:
                     comparison = GeneticImageGA(target, TRIANGLE_COUNT, comparison_config).run()
                     rows.append({
                         'selection': selection_method,
+                        'crossover': crossover_method,  
+                        'mutation': mutation_method,    
+                        'survival': survival_method,    
                         'error': comparison.best_fitness,
                         'generations': comparison.generations_completed,
                         'seconds': comparison.elapsed_seconds,
                     })
-    rows
-# ## Benchmark masivo con Picsum
-# 
-# Descarga un conjunto reproducible de imágenes, las normaliza mediante recorte centrado a 120×120 y ejecuta tres semillas por caso. `quick` usa 500 generaciones y `full` conserva las 15.000 generaciones de la configuración principal.
-# 
-# Una sola barra de progreso muestra las generaciones globales y actualiza la imagen, seed, error y resolución del caso actual sin apilar widgets. Lo
+    
+    OUTPUT_DIR = TP2_DIR / 'resultados_mejorados'
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    
+    df_comparacion = pd.DataFrame(rows)
+    csv_output = OUTPUT_DIR / 'comparacion_operadores.csv'
+    df_comparacion.to_csv(csv_output, index=False)
+
+    print(f"\nCorridas finalizadas.")
+    print(f"Resultados guardados en: {csv_output.resolve()}")
 # ## Decisiones para la defensa
 # 
 # - **Selección:** ranking evita que diferencias extremas de fitness dominen toda la población.
