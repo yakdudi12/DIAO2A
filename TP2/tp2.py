@@ -26,7 +26,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from IPython.display import Image as NotebookImage
+#from IPython.display import Image as NotebookImage
 
 PROJECT_DIR = Path.cwd()
 TP2_DIR = PROJECT_DIR / 'TP2' if (PROJECT_DIR / 'TP2').is_dir() else PROJECT_DIR
@@ -58,7 +58,7 @@ TRIANGLE_COUNT = 600
 IMAGE_PATH = TP2_DIR / 'imagenesprueba' / IMAGE_NAME
 original_image, target = load_target_image(IMAGE_PATH, TARGET_MAX_SIDE)
 print(f'{IMAGE_PATH.name}: {original_image.size} -> {target.size}')
-display(target)
+#display(target)
 
 # ## 3. Representación y fitness
 # 
