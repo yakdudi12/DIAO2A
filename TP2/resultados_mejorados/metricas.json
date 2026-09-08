@@ -1,20 +1,20 @@
 {
   "image": "prueba.jpeg",
   "triangle_count": 600,
-  "best_fitness": 0.2909874007955504,
+  "best_fitness": 0.049419678722714536,
   "fitness_components": {
-    "color": 0.22663737833499908,
-    "edge": 0.13737508468329906,
-    "ssim": 0.834162115375408,
-    "total": 0.2909874007955504
+    "color": 0.0411508921533823,
+    "edge": 0.027497250586748123,
+    "ssim": 0.12358341908219891,
+    "total": 0.049419678722714536
   },
-  "generations_completed": 1,
-  "elapsed_seconds": 0.7512749070301652,
+  "generations_completed": 15000,
+  "elapsed_seconds": 346.6575931571424,
   "stop_reason": "maximum_generations",
-  "backend": "CUDA (NVIDIA GeForce RTX 5090)",
+  "backend": "CUDA (NVIDIA GeForce RTX 3090)",
   "config": {
     "population_size": 64,
-    "generations": 1,
+    "generations": 15000,
     "mutation_probability": 0.75,
     "crossover_probability": 0.55,
     "elite_size": 3,

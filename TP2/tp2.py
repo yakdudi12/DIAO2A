@@ -259,9 +259,9 @@ if RUN_COMPARISON:
                         mutation=mutation_method,
                         survival=survival_method,
                         selection=selection_method,
-                        generations=500,
+                        generations=5000,
                         initial_evaluation_size=32,
-                        progress=False,
+                        progress=True,
                     )
                     comparison = GeneticImageGA(target, TRIANGLE_COUNT, comparison_config).run()
                     rows.append({
