@@ -40,10 +40,17 @@ en generaciones y el estado de la imagen/seed actual sin apilar barras en Jupyte
 ```text
 TP2/
 ├── tp2.ipynb
+├── tp2.py                      #Incluye la solucion de múltiples métodos (para cluster); Out:comparacion_operadores.csv
+├── graphics_operators.py       #.py para graficar /resultados_mejorados/comparacion_operadores.csv
+├── Genetics_presentacion.pdf 
+├── reconstruccion_final.png
+├── resultados                  #Iteracion antigua
+├── resultados_mejoradas        #última iteracion
 ├── imagenesprueba/
 └── tp2_ga/
     ├── engine.py
     ├── fitness.py
+    ├── benchmark.py
     ├── io.py
     ├── operators.py
     └── render.py
@@ -89,10 +96,16 @@ incluye el costo de compilación del kernel.
 
 ## Resultados
 
-La última sección del notebook crea `TP2/resultados_mejorados/` con:
+La última sección del notebook y del .py crea `TP2/resultados_mejorados/` con:
 
 - `reconstruccion_final.png`
 - `triangulos_finales.json`
 - `metricas.json`
+- `comparacion_operadores.csv`      #.py
+- `boxplot_errors.png`              #.py
+- `barplot_errors.png`
+- `scatter_errorandtime.png`
+
+
 
 El JSON de triángulos contiene la enumeración completa solicitada por el enunciado.
