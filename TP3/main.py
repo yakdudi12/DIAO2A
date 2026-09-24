@@ -4,7 +4,7 @@ from typing import Callable
 from activations import identity, relu, sigmoid
 from backpropagation import backward_pass, forward_pass
 from loss import mse_loss
-from optimizer import sgd_step
+from optimizer import SGD
 
 
 def instantiate_layers(
@@ -48,13 +48,14 @@ def train(nn, inputs, targets, epochs: int, learning_rate: float) -> None:
     """SGD: una actualización por muestra en cada época."""
     if len(inputs) != len(targets) or len(inputs) == 0:
         raise ValueError("inputs y targets deben tener la misma longitud no vacía")
+    optimizer = SGD(learning_rate)
     for epoch in range(epochs):
         total_loss = 0.0
         for x, y in zip(inputs, targets):
             activations, weighted_sums = forward_pass(nn, x)
             total_loss += mse_loss(y, activations[-1])
             gradients = backward_pass(nn, y, activations, weighted_sums)
-            sgd_step(nn, gradients, learning_rate)
+            optimizer.step(nn, gradients)
 
         if epoch == 0 or (epoch + 1) % 200 == 0:
             print(f"Época {epoch + 1:4d} | MSE: {total_loss / len(inputs):.8f}")
