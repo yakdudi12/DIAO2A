@@ -24,7 +24,7 @@ class PerceptronLineal:
         return z
 
     def update(self, x, y_true):
-        z = self.net_imput(x)
+        z = self.forward(x)
         error = y_true - z #true label menos el net imput
         self.bias += self.lr * error   #learning rate * error
         for i in range(len(self.weights)):
@@ -35,11 +35,12 @@ class PerceptronLineal:
 import numpy as np
 class PerceptronNoLineal:
     '''Activation Sigmoid, loss BCE (Binary Cross-Entropy)'''
-    def __init__(self, num_features, lr=0.01):
+    def __init__(self, num_features, lr=0.01, acfunc=None):
         self.num_features = num_features
         self.weights = [0.0 for _ in range(num_features)]
         self.bias = 0
         self.lr = lr
+        self.acfunc = acfunc
 
     def forward(self, x):
         weighted_sum = self.bias
@@ -58,10 +59,18 @@ class PerceptronNoLineal:
             z += x[i] * self.weights[i]
         return z
 
-    def predic_prob(self, x):
-        z = self.net_imput(x)
-        z_bounded = max(-500.0, min(500.0, z)) 
-        return 1.0 / (1.0 + np.exp(-z_bounded))
+    def predic_prob(self, x ):
+        if self.acfunc == "sigmoid":
+            z = self.net_imput(x)
+            z_bounded = max(-500.0, min(500.0, z)) 
+            activation_func = 1.0 / (1.0 + np.exp(-z_bounded))
+        elif self.acfunc == "relu":
+            z = self.net_imput(x)
+            activation_func = max(0, z)
+        else:
+            activation_func = z  #Funcion identidad
+        return activation_func
+ 
 
     def update(self, x, y_true):
         prob = self.predic_prob(x)
@@ -77,6 +86,7 @@ class PerceptronNoLineal:
         #-(yi * log(^yi) + 1 - yi * log(1- ^yi))
 
         return bce_loss
+
 
     
 #Training Loop

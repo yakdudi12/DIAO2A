@@ -1,12 +1,12 @@
-'''Implementacion del perceptron simple y multicapa Santiago'''
+'''Implementacion del perceptron simple'''
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from data.perceptron import PerceptronLineal , PerceptronNoLineal , train , compute_accuracy, compute_metrics
-from data_profiling import ProfileReport
+#from data_profiling import ProfileReport
 
-path_df = fr"TP3\data\fraud_dataset.csv"
+path_df = fr"TP3/data/fraud_dataset.csv"
 df = pd.read_csv(path_df,encoding='UTF-8')
 df = df.drop('big_model_fraud_probability', axis=1)
 
@@ -40,7 +40,7 @@ precision, recall, f1 = compute_metrics(ppn, X_train, y_train)
 print(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
 
 print("\nPerceptron No lineal (BCE + Sigmoid)\n")
-ppn_nolineal = PerceptronNoLineal(num_features=X_train.shape[1], lr=0.01)
+ppn_nolineal = PerceptronNoLineal(num_features=X_train.shape[1], lr=0.01, acfunc="sigmoid")
 hist_nolineal = train(ppn_nolineal, X_train, y_train, epochs = 10)
 train_acc_2 = compute_accuracy(ppn_nolineal,x_train=X_train,y_train=y_train)
 print("Model Accuracy:", train_acc_2)
@@ -68,7 +68,7 @@ X_train_scaled = scaler.fit_transform(X_train_2)
 X_test_scaled = scaler.transform(X_test)
 
 print("\nPerceptron No lineal (BCE + Sigmoid)\n")
-ppn_nolineal_2 = PerceptronNoLineal(num_features=X_train_scaled.shape[1], lr=0.01)
+ppn_nolineal_2 = PerceptronNoLineal(num_features=X_train_scaled.shape[1], lr=0.01, acfunc="sigmoid")
 hist_nolineal_2 = train(ppn_nolineal_2, X_train_scaled, y_train_2, epochs = 10)
 
 #Train
@@ -86,13 +86,25 @@ print("\nModel Metrics en Test:")
 print(f"Precision: {prec_nonlin}, Recall: {rec_nonlin}, F1-Score: {f1_nonlin}")
 
 
+#Opcionales:
+''' NonLinear Perceptron con ReLU'''
+print("\nPerceptron No lineal (BCE + ReLU)\n")
+ppn_nolineal_relu = PerceptronNoLineal(num_features=X_train.shape[1], lr=0.01, acfunc="relu")
+hist_nolineal_relu = train(ppn_nolineal_relu, X_train, y_train, epochs = 10)
+train_acc_2 = compute_accuracy(ppn_nolineal_relu,x_train=X_train,y_train=y_train)
+print("Model Accuracy:", train_acc_2)
 
-'''plt.figure(figsize=(12, 6))
-plt.plot(hist_nolineal["epoch"], hist_nolineal["loss"], marker='o', label='Perceptrón No Lineal')
+precision_relu, recall2_relu, f1_relu = compute_metrics(ppn_nolineal_relu, X_train, y_train)
+print(f"Precision: {precision_relu}, Recall: {recall2_relu}, F1-Score: {f1_relu}")
+
+plt.figure(figsize=(12, 6))
+plt.plot(hist_nolineal["epoch"], hist_nolineal["loss"], marker='o', label='Perceptrón No Lineal (Sigmoid)')
 plt.plot(hist_lineal["epoch"], hist_lineal["loss"], marker='*', label='Perceptrón Lineal')
+plt.plot(hist_nolineal_relu["epoch"], hist_nolineal_relu["loss"], marker='o', label='Perceptrón No Lineal (ReLU)')
 plt.title('Evolución de la Pérdida por Epoch')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.grid(True)
 plt.legend()
-plt.show()'''
+plt.show()
+
