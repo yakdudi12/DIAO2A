@@ -36,8 +36,15 @@ class MLP:
 
 #Gemini Pro
 class MLP2:
-    def __init__(self, input_features, hidden1_size, hidden2_size, output_size, lr=0.01, acfunc="relu"):
+    def __init__(self, input_features, hidden1_size, hidden2_size, output_size, lr=0.01, acfunc="relu",
+                 optimizer="sgd", beta1=0.9, beta2=0.999, eps=1e-8):
+        if optimizer not in ("sgd", "momentum", "rmsprop", "adam"):
+            raise ValueError(f"Optimizador desconocido: {optimizer}")
         self.acfunc = acfunc
+        self.optimizer = optimizer
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
 
         self.w1 = np.random.randn(input_features, hidden1_size) * 0.1
         self.b1 = np.zeros((1, hidden1_size))
@@ -49,6 +56,29 @@ class MLP2:
         self.b3 = np.zeros((1, output_size))
         
         self.lr = lr
+
+        self.params = [self.w1, self.b1, self.w2, self.b2, self.w3, self.b3]
+        self.m = [np.zeros_like(p) for p in self.params]
+        self.v = [np.zeros_like(p) for p in self.params]
+        self.t = 0
+
+    def _step(self, grads, lr):
+        self.t += 1
+        for i, (p, g) in enumerate(zip(self.params, grads)):
+            if self.optimizer == "sgd":
+                p -= lr * g
+            elif self.optimizer == "momentum":
+                self.m[i] = self.beta1 * self.m[i] + g
+                p -= lr * self.m[i]
+            elif self.optimizer == "rmsprop":
+                self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * g**2
+                p -= lr * g / (np.sqrt(self.v[i]) + self.eps)
+            elif self.optimizer == "adam":
+                self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * g
+                self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * g**2
+                m_hat = self.m[i] / (1 - self.beta1**self.t)
+                v_hat = self.v[i] / (1 - self.beta2**self.t)
+                p -= lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
     def sigmoid(self, x):
         x_clipped = np.clip(x, -500, 500)
@@ -106,16 +136,6 @@ class MLP2:
             # 3. Error propagado a la Oculta 1 (dz1)
             da1 = np.dot(dz2, self.w2.T)
             dz1 = da1 * self.a1 * (1 - self.a1) # Derivada Sigmoide
-            
-            # 4. Actualización de Pesos y Sesgos
-            self.w3 -= lr * np.dot(self.a2.T, dz3)
-            self.b3 -= lr * np.sum(dz3, axis=0, keepdims=True)
-            
-            self.w2 -= lr * np.dot(self.a1.T, dz2)
-            self.b2 -= lr * np.sum(dz2, axis=0, keepdims=True)
-            
-            self.w1 -= lr * np.dot(x.T, dz1)
-            self.b1 -= lr * np.sum(dz1, axis=0, keepdims=True)
         elif self.acfunc == "relu":
             # 1. Error en la salida
             dz3 = output - y
@@ -127,16 +147,13 @@ class MLP2:
             # 3. Error propagado a la Oculta 1 (Usando derivada ReLU de z1)
             da1 = np.dot(dz2, self.w2.T)
             dz1 = da1 * self.relu_derivative(self.z1)
-            
-            # 4. Actualización
-            self.w3 -= lr * np.dot(self.a2.T, dz3)
-            self.b3 -= lr * np.sum(dz3, axis=0, keepdims=True)
-            
-            self.w2 -= lr * np.dot(self.a1.T, dz2)
-            self.b2 -= lr * np.sum(dz2, axis=0, keepdims=True)
-            
-            self.w1 -= lr * np.dot(x.T, dz1)
-            self.b1 -= lr * np.sum(dz1, axis=0, keepdims=True)
+
+        grads = [
+            np.dot(x.T, dz1), np.sum(dz1, axis=0, keepdims=True),
+            np.dot(self.a1.T, dz2), np.sum(dz2, axis=0, keepdims=True),
+            np.dot(self.a2.T, dz3), np.sum(dz3, axis=0, keepdims=True),
+        ]
+        self._step(grads, lr)
     
 #Training Loop
 def train_mlp(model, X_train, y_train, epochs):

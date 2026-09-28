@@ -1,4 +1,5 @@
 '''Implementacion del perceptron multicapa'''
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,21 +8,29 @@ from sklearn.preprocessing import OneHotEncoder
 from data.digit_dataset_loader import load_dataset , get_image , plot_sample
 from data.mlpperceptron import MLP, train_mlp, compute_accuracy_mlp, compute_metrics_mlp, MLP2
 
-df = load_dataset(fr"TP3/data/digits.csv")
+DATA_DIR = Path(__file__).parent / "data"
+
+df = load_dataset(DATA_DIR / "digits.csv")
 print(df.info())
+
+# EDA
+print(df.head())
+print(df.info())
+print(df["label"].value_counts().reindex(range(10), fill_value=0))
+
 
 X_train = np.stack(df["image"].values)
 y_train = np.array(df["label"])
 
-df_test = load_dataset(fr"TP3/data/digits_test.csv")
+df_test = load_dataset(DATA_DIR / "digits_test.csv")
 X_test = np.stack(df_test["image"].values)
 y_test = np.array(df_test["label"])
 
 #Transform
 X_train = X_train.reshape(X_train.shape[0], -1)
 X_test = X_test.reshape(X_test.shape[0], -1)
-X_train = X_train.astype(float) / 255.0 
-X_test = X_test.astype(float) / 255.0
+X_train = X_train.astype(float)
+X_test = X_test.astype(float)
 
 #One-hot encoding
 encoder = OneHotEncoder(categories=[np.arange(10)], sparse_output=False)
@@ -60,6 +69,9 @@ print("Model Accuracy:", train_acc)
 precision, recall, f1 = compute_metrics_mlp(model_mlp2, X_train, y_train_ohe)
 print(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
 
+pd.DataFrame(hist).to_csv(DATA_DIR / "hist_mlp.csv", index=False)
+pd.DataFrame(hist2).to_csv(DATA_DIR / "hist_mlp2.csv", index=False)
+
 plt.figure(figsize=(12, 6))
 plt.plot(hist["epoch"], hist["loss"], marker='o', label='MLP')
 plt.plot(hist2["epoch"], hist2["loss"], marker='*', label='MLP-2')
@@ -73,47 +85,60 @@ plt.show()
 
 
 #Grid Search
+X_tr, X_val, y_tr, y_val = train_test_split(
+    X_train, y_train_ohe, test_size=0.2, stratify=y_train, random_state=42
+)
+
 epochs_gridsearch = 15
 learning_rates = [0.1, 0.01, 0.001]
-architectures = [(32, 16), (64, 32), (128, 64)] 
+architectures = [(32, 16), (64, 32), (128, 64)]
+optimizers = ["sgd", "momentum", "rmsprop", "adam"]
 best_acc = 0.0
 best_params = {}
 all_histories = {}
+grid_hists = []
 
 print("Iniciando búsqueda de hiperparámetros...")
 for h1, h2 in architectures:
     for lr in learning_rates:
-        print(f"\n--- Probando Arquitectura: ({h1}, {h2}) | LR: {lr} ---")
-        
-        # Instanciamos el modelo con las variables del bucle
-        model_mlp2 = MLP2(
-            input_features=X_train.shape[1], 
-            hidden1_size=h1,   
-            hidden2_size=h2,   
-            output_size=num_classes, 
-            lr=lr,
-            acfunc="relu"
-        )
-        
-        hist2 = train_mlp(model_mlp2, X_train, y_train_ohe, epochs=epochs_gridsearch)
-        etiqueta = f"Arch({h1},{h2}) - LR:{lr}"
-        all_histories[etiqueta] = hist2
+        for opt in optimizers:
+            print(f"\n--- Probando Arquitectura: ({h1}, {h2}) | LR: {lr} | Optimizador: {opt} ---")
 
-        # Evaluamos
-        train_acc = compute_accuracy_mlp(model_mlp2, x_train=X_train, y_train=y_train_ohe)
-        precision, recall, f1 = compute_metrics_mlp(model_mlp2, X_train, y_train_ohe)
-        
-        print(f"Accuracy: {train_acc:.4f} | F1-Score: {f1:.4f}")
-        
-        # Lógica para guardar la mejor combinación
-        if train_acc > best_acc:
-            best_acc = train_acc
-            best_params = {'hidden1': h1, 'hidden2': h2, 'lr': lr}
+            # Instanciamos el modelo con las variables del bucle
+            model_mlp2 = MLP2(
+                input_features=X_train.shape[1],
+                hidden1_size=h1,
+                hidden2_size=h2,
+                output_size=num_classes,
+                lr=lr,
+                acfunc="relu",
+                optimizer=opt
+            )
+
+            hist2 = train_mlp(model_mlp2, X_tr, y_tr, epochs=epochs_gridsearch)
+            etiqueta = f"Arch({h1},{h2}) - LR:{lr} - {opt}"
+            all_histories[etiqueta] = hist2
+
+            # Evaluamos
+            train_acc = compute_accuracy_mlp(model_mlp2, x_train=X_tr, y_train=y_tr)
+            val_acc = compute_accuracy_mlp(model_mlp2, x_train=X_val, y_train=y_val)
+            precision, recall, f1 = compute_metrics_mlp(model_mlp2, X_val, y_val)
+
+            print(f"Accuracy train: {train_acc:.4f} | Accuracy val: {val_acc:.4f} | F1-Score val: {f1:.4f}")
+            grid_hists.append(pd.DataFrame(hist2).assign(hidden1=h1, hidden2=h2, lr=lr, optimizer=opt,
+                                                         train_acc=train_acc, val_acc=val_acc))
+
+            # Lógica para guardar la mejor combinación
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_params = {'hidden1': h1, 'hidden2': h2, 'lr': lr, 'optimizer': opt}
 
 print("\n==================================================")
-print(f"Búsqueda finalizada. Mejor Accuracy: {best_acc:.4f}")
+print(f"Búsqueda finalizada. Mejor Accuracy en validación: {best_acc:.4f}")
 print(f"Mejores hiperparámetros: {best_params}")
 print("==================================================")
+
+pd.concat(grid_hists).to_csv(DATA_DIR / "hist_gridsearch.csv", index=False)
 
 plt.figure(figsize=(14, 8))
 for etiqueta, hist_data in all_histories.items():
@@ -130,13 +155,15 @@ plt.show()
 #Train mlp_2
 model_mlp_best = MLP2(
     input_features=X_train.shape[1], 
-    hidden1_size=128,   # Neuronas en la primera capa oculta
-    hidden2_size=64,   # Neuronas en la segunda capa oculta
-    output_size=num_classes, 
-    lr=0.01,
-    acfunc="relu"
+    hidden1_size=best_params['hidden1'],   # Neuronas en la primera capa oculta
+    hidden2_size=best_params['hidden2'],   # Neuronas en la segunda capa oculta
+    output_size=num_classes,
+    lr=best_params['lr'],
+    acfunc="relu",
+    optimizer=best_params['optimizer']
 )
 hist3 = train_mlp(model_mlp_best, X_train, y_train_ohe, epochs=epochs_all)
+pd.DataFrame(hist3).to_csv(DATA_DIR / "hist_mlp_best.csv", index=False)
 
 plt.figure(figsize=(12, 6))
 plt.plot(hist3["epoch"], hist3["loss"], marker='o', label='MLP_Best')
