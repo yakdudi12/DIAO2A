@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import ConfusionMatrixDisplay
 from data.digit_dataset_loader import load_dataset , get_image , plot_sample
 from data.mlpperceptron import MLP, train_mlp, compute_accuracy_mlp, compute_metrics_mlp, MLP2
 
@@ -84,7 +85,7 @@ plt.show()
 
 
 
-#Grid Search
+#Grid Search (Opus 5.5)
 X_tr, X_val, y_tr, y_val = train_test_split(
     X_train, y_train_ohe, test_size=0.2, stratify=y_train, random_state=42
 )
@@ -182,4 +183,10 @@ test_acc = compute_accuracy_mlp(model_mlp_best, X_test, y_test_ohe)
 precision_test, recall_test, f1_test = compute_metrics_mlp(model_mlp_best, X_test, y_test_ohe)
 print(f"Accuracy: {test_acc:.4f}")
 print(f"Precision: {precision_test:.4f}, Recall: {recall_test:.4f}, F1-Score: {f1_test:.4f}")
+
+y_pred_test = model_mlp_best.forward(X_test).argmax(axis=1)
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred_test, labels=range(10), normalize="true",
+                                        values_format=".2f", cmap="Blues")
+plt.title("Matriz de confusión en test (normalizada por clase real)")
+plt.show()
 
