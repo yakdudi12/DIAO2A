@@ -10,6 +10,8 @@ from data.digit_dataset_loader import load_dataset , get_image , plot_sample
 from data.mlpperceptron import MLP, train_mlp, compute_accuracy_mlp, compute_metrics_mlp, MLP2
 
 DATA_DIR = Path(__file__).parent / "data"
+RESULTS_DIR = DATA_DIR / "results"
+RESULTS_DIR.mkdir(exist_ok=True)
 
 df = load_dataset(DATA_DIR / "digits.csv")
 print(df.info())
@@ -70,8 +72,8 @@ print("Model Accuracy:", train_acc)
 precision, recall, f1 = compute_metrics_mlp(model_mlp2, X_train, y_train_ohe)
 print(f"Precision: {precision}, Recall: {recall}, F1-Score: {f1}")
 
-pd.DataFrame(hist).to_csv(DATA_DIR / "hist_mlp.csv", index=False)
-pd.DataFrame(hist2).to_csv(DATA_DIR / "hist_mlp2.csv", index=False)
+pd.DataFrame(hist).to_csv(RESULTS_DIR / "hist_mlp.csv", index=False)
+pd.DataFrame(hist2).to_csv(RESULTS_DIR / "hist_mlp2.csv", index=False)
 
 plt.figure(figsize=(12, 6))
 plt.plot(hist["epoch"], hist["loss"], marker='o', label='MLP')
@@ -139,7 +141,7 @@ print(f"Búsqueda finalizada. Mejor Accuracy en validación: {best_acc:.4f}")
 print(f"Mejores hiperparámetros: {best_params}")
 print("==================================================")
 
-pd.concat(grid_hists).to_csv(DATA_DIR / "hist_gridsearch.csv", index=False)
+pd.concat(grid_hists).to_csv(RESULTS_DIR / "hist_gridsearch.csv", index=False)
 
 plt.figure(figsize=(14, 8))
 for etiqueta, hist_data in all_histories.items():
@@ -164,8 +166,8 @@ model_mlp_best = MLP2(
     optimizer=best_params['optimizer']
 )
 hist3 = train_mlp(model_mlp_best, X_train, y_train_ohe, epochs=epochs_all)
-pd.DataFrame(hist3).to_csv(DATA_DIR / "hist_mlp_best.csv", index=False)
-np.savez(DATA_DIR / "mlp_best.npz",
+pd.DataFrame(hist3).to_csv(RESULTS_DIR / "hist_mlp_best.csv", index=False)
+np.savez(RESULTS_DIR / "mlp_best.npz",
          w1=model_mlp_best.w1, b1=model_mlp_best.b1,
          w2=model_mlp_best.w2, b2=model_mlp_best.b2,
          w3=model_mlp_best.w3, b3=model_mlp_best.b3,
