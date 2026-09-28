@@ -83,6 +83,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.grid(True)
 plt.legend()
+plt.savefig(RESULTS_DIR / "loss_mlp_vs_mlp2.png", bbox_inches="tight")
 plt.show() 
 
 
@@ -152,6 +153,7 @@ plt.ylabel('Loss')
 plt.grid(True)
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left') 
 plt.tight_layout()
+plt.savefig(RESULTS_DIR / "loss_gridsearch.png", bbox_inches="tight")
 plt.show()
 
 #Best Model run:
@@ -180,6 +182,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.grid(True)
 plt.legend()
+plt.savefig(RESULTS_DIR / "loss_mlp_best.png", bbox_inches="tight")
 plt.show() 
 
 train_acc = compute_accuracy_mlp(model_mlp_best,x_train=X_train,y_train=y_train_ohe)
@@ -195,5 +198,6 @@ y_pred_test = model_mlp_best.forward(X_test).argmax(axis=1)
 ConfusionMatrixDisplay.from_predictions(y_test, y_pred_test, labels=range(10), normalize="true",
                                         values_format=".2f", cmap="Blues")
 plt.title("Matriz de confusión en test (normalizada por clase real)")
+plt.savefig(RESULTS_DIR / "confusion_matrix_test.png", bbox_inches="tight")
 plt.show()
 
