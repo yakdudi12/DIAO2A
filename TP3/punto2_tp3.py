@@ -165,6 +165,11 @@ model_mlp_best = MLP2(
 )
 hist3 = train_mlp(model_mlp_best, X_train, y_train_ohe, epochs=epochs_all)
 pd.DataFrame(hist3).to_csv(DATA_DIR / "hist_mlp_best.csv", index=False)
+np.savez(DATA_DIR / "mlp_best.npz",
+         w1=model_mlp_best.w1, b1=model_mlp_best.b1,
+         w2=model_mlp_best.w2, b2=model_mlp_best.b2,
+         w3=model_mlp_best.w3, b3=model_mlp_best.b3,
+         acfunc=model_mlp_best.acfunc, epochs=epochs_all, **best_params)
 
 plt.figure(figsize=(12, 6))
 plt.plot(hist3["epoch"], hist3["loss"], marker='o', label='MLP_Best')
