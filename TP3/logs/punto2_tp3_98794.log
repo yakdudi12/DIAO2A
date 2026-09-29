@@ -1,0 +1,850 @@
+<class 'pandas.DataFrame'>
+RangeIndex: 12449 entries, 0 to 12448
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   label   12449 non-null  int64 
+ 1   image   12449 non-null  object
+dtypes: int64(1), object(1)
+memory usage: 194.6+ KB
+None
+   label                                              image
+0      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+1      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+2      6  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+3      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+4      2  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+<class 'pandas.DataFrame'>
+RangeIndex: 12449 entries, 0 to 12448
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   label   12449 non-null  int64 
+ 1   image   12449 non-null  object
+dtypes: int64(1), object(1)
+memory usage: 194.6+ KB
+None
+label
+0    1480
+1    1685
+2    1489
+3    1532
+4    1460
+5     271
+6    1479
+7    1566
+8       0
+9    1487
+Name: count, dtype: int64
+Epoch: 1 , Loss: 1.0773517192457698
+Epoch: 2 , Loss: 0.5247464036014395
+Epoch: 3 , Loss: 0.42297776372620005
+Epoch: 4 , Loss: 0.3678054075077107
+Epoch: 5 , Loss: 0.33044289712177616
+Epoch: 6 , Loss: 0.30275267492134533
+Epoch: 7 , Loss: 0.2810257790092874
+Epoch: 8 , Loss: 0.26319596443754323
+Epoch: 9 , Loss: 0.24815782878096204
+Epoch: 10 , Loss: 0.23527083042742258
+Epoch: 11 , Loss: 0.2240863637053548
+Epoch: 12 , Loss: 0.21421474200865115
+Epoch: 13 , Loss: 0.2053917185058891
+Epoch: 14 , Loss: 0.1974386616182432
+Epoch: 15 , Loss: 0.19021180031824386
+Epoch: 16 , Loss: 0.183573567790741
+Epoch: 17 , Loss: 0.17743477096076676
+Epoch: 18 , Loss: 0.1717601641411588
+Epoch: 19 , Loss: 0.16650795686518324
+Epoch: 20 , Loss: 0.1616177174546192
+Epoch: 21 , Loss: 0.1570205881760715
+Epoch: 22 , Loss: 0.15265714835088212
+Epoch: 23 , Loss: 0.14848513834651866
+Epoch: 24 , Loss: 0.14447831297964248
+Epoch: 25 , Loss: 0.14062149971813317
+Epoch: 26 , Loss: 0.13690365919138464
+Epoch: 27 , Loss: 0.13331394533307028
+Epoch: 28 , Loss: 0.12984348809115343
+Epoch: 29 , Loss: 0.1264917770635541
+Epoch: 30 , Loss: 0.12326497993988458
+Epoch: 31 , Loss: 0.12016801373573104
+Epoch: 32 , Loss: 0.11719642992799391
+Epoch: 33 , Loss: 0.11433899219148415
+Epoch: 34 , Loss: 0.11158517339436613
+Epoch: 35 , Loss: 0.10892965592382149
+Epoch: 36 , Loss: 0.10637043112191745
+Epoch: 37 , Loss: 0.10390361054554745
+Epoch: 38 , Loss: 0.10152484700178276
+Epoch: 39 , Loss: 0.09923172818257524
+Epoch: 40 , Loss: 0.09702220482050826
+Epoch: 41 , Loss: 0.09489197314396419
+Epoch: 42 , Loss: 0.09283522909369031
+Epoch: 43 , Loss: 0.09084700207070305
+Epoch: 44 , Loss: 0.0889244450566584
+Epoch: 45 , Loss: 0.08706578287060476
+Epoch: 46 , Loss: 0.08526829065009367
+Epoch: 47 , Loss: 0.0835282322692055
+Epoch: 48 , Loss: 0.08184227076364353
+Epoch: 49 , Loss: 0.08020805878355601
+Epoch: 50 , Loss: 0.07862391956521934
+Model Accuracy: 0.9826492087717889
+Precision: 0.8809339502207623, Recall: 0.8778077756879604, F1-Score: 0.8793183049629235
+Epoch: 1 , Loss: 0.39260921332597976
+Epoch: 2 , Loss: 0.17957047979259497
+Epoch: 3 , Loss: 0.12446325015637669
+Epoch: 4 , Loss: 0.08808815533001114
+Epoch: 5 , Loss: 0.06595424566196821
+Epoch: 6 , Loss: 0.05419246473592739
+Epoch: 7 , Loss: 0.04255645113986381
+Epoch: 8 , Loss: 0.0340901825938037
+Epoch: 9 , Loss: 0.029117140852886792
+Epoch: 10 , Loss: 0.03733269135326419
+Epoch: 11 , Loss: 0.03468648771167207
+Epoch: 12 , Loss: 0.03508612647800773
+Epoch: 13 , Loss: 0.0268134063388526
+Epoch: 14 , Loss: 0.02677113461401296
+Epoch: 15 , Loss: 0.0186512296679183
+Epoch: 16 , Loss: 0.010690788471865243
+Epoch: 17 , Loss: 0.0029790574092463827
+Epoch: 18 , Loss: 0.010814734733602076
+Epoch: 19 , Loss: 0.00971626226710914
+Epoch: 20 , Loss: 0.011521911966691577
+Epoch: 21 , Loss: 0.013205163403940842
+Epoch: 22 , Loss: 0.03671166994950986
+Epoch: 23 , Loss: 0.015780529345127157
+Epoch: 24 , Loss: 0.021239107055816386
+Epoch: 25 , Loss: 0.011310579278647372
+Epoch: 26 , Loss: 0.026099616797740567
+Epoch: 27 , Loss: 0.011473969369820564
+Epoch: 28 , Loss: 0.009737985767181465
+Epoch: 29 , Loss: 0.0037725372780751613
+Epoch: 30 , Loss: 0.0012645152408068592
+Epoch: 31 , Loss: 0.0002809651441661669
+Epoch: 32 , Loss: 0.00012627748196747607
+Epoch: 33 , Loss: 0.00010394051294830525
+Epoch: 34 , Loss: 9.091898315265378e-05
+Epoch: 35 , Loss: 8.159727380121941e-05
+Epoch: 36 , Loss: 7.447573498531341e-05
+Epoch: 37 , Loss: 6.87747985202112e-05
+Epoch: 38 , Loss: 6.384121658859237e-05
+Epoch: 39 , Loss: 5.9674128027557846e-05
+Epoch: 40 , Loss: 5.6124106736527975e-05
+Epoch: 41 , Loss: 5.3060991346829554e-05
+Epoch: 42 , Loss: 5.036818627662314e-05
+Epoch: 43 , Loss: 4.7973341949980975e-05
+Epoch: 44 , Loss: 4.5784196396048933e-05
+Epoch: 45 , Loss: 4.381625397192528e-05
+Epoch: 46 , Loss: 4.202988700278959e-05
+Epoch: 47 , Loss: 4.039895741433681e-05
+Epoch: 48 , Loss: 3.891386335907341e-05
+Epoch: 49 , Loss: 3.753919584540655e-05
+Epoch: 50 , Loss: 3.627453756862194e-05
+Model Accuracy: 1.0
+Precision: 0.9, Recall: 0.9, F1-Score: 0.9
+Iniciando búsqueda de hiperparámetros...
+
+--- Probando Arquitectura: (32, 16) | LR: 0.1 | Optimizador: sgd ---
+Epoch: 1 , Loss: 1.8814395911202697
+Epoch: 2 , Loss: 2.033552599561632
+Epoch: 3 , Loss: 1.9467443580103185
+Epoch: 4 , Loss: 1.8962911466027697
+Epoch: 5 , Loss: 1.852763926755484
+Epoch: 6 , Loss: 1.820706083002855
+Epoch: 7 , Loss: 1.806121313253735
+Epoch: 8 , Loss: 1.8176075933907379
+Epoch: 9 , Loss: 1.8216930591208729
+Epoch: 10 , Loss: 2.162551476085407
+Epoch: 11 , Loss: 2.1625222936187294
+Epoch: 12 , Loss: 2.1625047767375944
+Epoch: 13 , Loss: 2.162491258489491
+Epoch: 14 , Loss: 2.162480508945388
+Epoch: 15 , Loss: 2.1624717559971787
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (32, 16) | LR: 0.1 | Optimizador: momentum ---
+Epoch: 1 , Loss: 2.3781233569301676
+Epoch: 2 , Loss: 2.3763736112969576
+Epoch: 3 , Loss: 2.3763415882760612
+Epoch: 4 , Loss: 2.3763284489215604
+Epoch: 5 , Loss: 2.37632124221606
+Epoch: 6 , Loss: 2.3763166811845826
+Epoch: 7 , Loss: 2.3763135324446605
+Epoch: 8 , Loss: 2.3763112271275837
+Epoch: 9 , Loss: 2.37630946602928
+Epoch: 10 , Loss: 2.37630807662123
+Epoch: 11 , Loss: 2.376306952382153
+Epoch: 12 , Loss: 2.376306023968635
+Epoch: 13 , Loss: 2.3763052442890675
+Epoch: 14 , Loss: 2.3763045802370977
+Epoch: 15 , Loss: 2.3763040078568896
+Accuracy train: 0.1267 | Accuracy val: 0.1265 | F1-Score val: 0.0237
+
+--- Probando Arquitectura: (32, 16) | LR: 0.1 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 2.2710550416198307
+Epoch: 2 , Loss: 2.213172275460694
+Epoch: 3 , Loss: 2.210180226216371
+Epoch: 4 , Loss: 2.210180295896307
+Epoch: 5 , Loss: 2.210180295891942
+Epoch: 6 , Loss: 2.210180295889905
+Epoch: 7 , Loss: 2.2101802958889514
+Epoch: 8 , Loss: 2.210180295888382
+Epoch: 9 , Loss: 2.2101802958880103
+Epoch: 10 , Loss: 2.2101802958877443
+Epoch: 11 , Loss: 2.21018029588755
+Epoch: 12 , Loss: 2.2101802958873975
+Epoch: 13 , Loss: 2.2101802958872714
+Epoch: 14 , Loss: 2.2101802958871706
+Epoch: 15 , Loss: 2.2101802958870866
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (32, 16) | LR: 0.1 | Optimizador: adam ---
+Epoch: 1 , Loss: 2.216646498724937
+Epoch: 2 , Loss: 2.2109292800999767
+Epoch: 3 , Loss: 2.2109292316180555
+Epoch: 4 , Loss: 2.210929231262205
+Epoch: 5 , Loss: 2.210929231253079
+Epoch: 6 , Loss: 2.2109292312508333
+Epoch: 7 , Loss: 2.210929231249794
+Epoch: 8 , Loss: 2.2109292312491973
+Epoch: 9 , Loss: 2.2109292312488082
+Epoch: 10 , Loss: 2.210929231248537
+Epoch: 11 , Loss: 2.2109292312483344
+Epoch: 12 , Loss: 2.2109292312481887
+Epoch: 13 , Loss: 2.210929231248066
+Epoch: 14 , Loss: 2.210929231247968
+Epoch: 15 , Loss: 2.210929231247886
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (32, 16) | LR: 0.01 | Optimizador: sgd ---
+Epoch: 1 , Loss: 0.5689892879619676
+Epoch: 2 , Loss: 0.23913617077450378
+Epoch: 3 , Loss: 0.17512569396094313
+Epoch: 4 , Loss: 0.1356633450052594
+Epoch: 5 , Loss: 0.11319608231583027
+Epoch: 6 , Loss: 0.0931596092089574
+Epoch: 7 , Loss: 0.08373258953287177
+Epoch: 8 , Loss: 0.07427161531238106
+Epoch: 9 , Loss: 0.061635049818596584
+Epoch: 10 , Loss: 0.04989977164255173
+Epoch: 11 , Loss: 0.04906783345365503
+Epoch: 12 , Loss: 0.04747781908379966
+Epoch: 13 , Loss: 0.04417228849575341
+Epoch: 14 , Loss: 0.04376080227059499
+Epoch: 15 , Loss: 0.02566570633062792
+Accuracy train: 0.9937 | Accuracy val: 0.9570 | F1-Score val: 0.8462
+
+--- Probando Arquitectura: (32, 16) | LR: 0.01 | Optimizador: momentum ---
+Epoch: 1 , Loss: 1.757503147026311
+Epoch: 2 , Loss: 1.8148453915701872
+Epoch: 3 , Loss: 1.9439457383807184
+Epoch: 4 , Loss: 1.9362626617271148
+Epoch: 5 , Loss: 1.874640513206514
+Epoch: 6 , Loss: 1.865379447058593
+Epoch: 7 , Loss: 1.8333799596030984
+Epoch: 8 , Loss: 1.8150357199550726
+Epoch: 9 , Loss: 1.8632817774788866
+Epoch: 10 , Loss: 1.8606107906668194
+Epoch: 11 , Loss: 1.8606407323442995
+Epoch: 12 , Loss: 1.860646492978942
+Epoch: 13 , Loss: 1.8606479628176826
+Epoch: 14 , Loss: 1.8606474359623568
+Epoch: 15 , Loss: 1.8606460305040298
+Accuracy train: 0.2502 | Accuracy val: 0.2510 | F1-Score val: 0.0993
+
+--- Probando Arquitectura: (32, 16) | LR: 0.01 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 1.0567154656812117
+Epoch: 2 , Loss: 0.7404065920814562
+Epoch: 3 , Loss: 0.6446917135349096
+Epoch: 4 , Loss: 0.620890487441887
+Epoch: 5 , Loss: 0.6137997174338387
+Epoch: 6 , Loss: 0.5971959253397664
+Epoch: 7 , Loss: 0.582750583651634
+Epoch: 8 , Loss: 0.5789507891028766
+Epoch: 9 , Loss: 0.5717605594892512
+Epoch: 10 , Loss: 0.5781056614549909
+Epoch: 11 , Loss: 0.6024948867901596
+Epoch: 12 , Loss: 0.5822797030214563
+Epoch: 13 , Loss: 0.6004856229431041
+Epoch: 14 , Loss: 0.5882572413371594
+Epoch: 15 , Loss: 0.6073578108913054
+Accuracy train: 0.8655 | Accuracy val: 0.8369 | F1-Score val: 0.6939
+
+--- Probando Arquitectura: (32, 16) | LR: 0.01 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.6062884359446896
+Epoch: 2 , Loss: 0.4488236509908692
+Epoch: 3 , Loss: 0.4149024883971691
+Epoch: 4 , Loss: 0.38711589432370225
+Epoch: 5 , Loss: 0.3732918133719949
+Epoch: 6 , Loss: 0.37392580927696595
+Epoch: 7 , Loss: 0.3580342418154395
+Epoch: 8 , Loss: 0.3577589948662867
+Epoch: 9 , Loss: 0.3340311565914975
+Epoch: 10 , Loss: 0.33224505805485877
+Epoch: 11 , Loss: 0.33653925903134996
+Epoch: 12 , Loss: 0.29983301718919264
+Epoch: 13 , Loss: 0.32562628822504314
+Epoch: 14 , Loss: 0.33731261491906944
+Epoch: 15 , Loss: 0.34717402605670966
+Accuracy train: 0.9233 | Accuracy val: 0.9028 | F1-Score val: 0.7787
+
+--- Probando Arquitectura: (32, 16) | LR: 0.001 | Optimizador: sgd ---
+Epoch: 1 , Loss: 1.4788178274538102
+Epoch: 2 , Loss: 0.5073889604801871
+Epoch: 3 , Loss: 0.36413875501399784
+Epoch: 4 , Loss: 0.3104276853637316
+Epoch: 5 , Loss: 0.2789005067994087
+Epoch: 6 , Loss: 0.2564541897167139
+Epoch: 7 , Loss: 0.23862560658383264
+Epoch: 8 , Loss: 0.22334974029629456
+Epoch: 9 , Loss: 0.2093721862909642
+Epoch: 10 , Loss: 0.19643599352436186
+Epoch: 11 , Loss: 0.18466697532192664
+Epoch: 12 , Loss: 0.17366016156820202
+Epoch: 13 , Loss: 0.16313440013895436
+Epoch: 14 , Loss: 0.153260974465334
+Epoch: 15 , Loss: 0.14399099891205488
+Accuracy train: 0.9630 | Accuracy val: 0.9430 | F1-Score val: 0.8268
+
+--- Probando Arquitectura: (32, 16) | LR: 0.001 | Optimizador: momentum ---
+Epoch: 1 , Loss: 0.5585684585976746
+Epoch: 2 , Loss: 0.24180610584539214
+Epoch: 3 , Loss: 0.17843025927412762
+Epoch: 4 , Loss: 0.1433932698978386
+Epoch: 5 , Loss: 0.12124382873158139
+Epoch: 6 , Loss: 0.09737867541201801
+Epoch: 7 , Loss: 0.095738756344442
+Epoch: 8 , Loss: 0.083900587051064
+Epoch: 9 , Loss: 0.0706940949049484
+Epoch: 10 , Loss: 0.06958561801816496
+Epoch: 11 , Loss: 0.07006524415277164
+Epoch: 12 , Loss: 0.07159477710646733
+Epoch: 13 , Loss: 0.05043255356600951
+Epoch: 14 , Loss: 0.05907280963979847
+Epoch: 15 , Loss: 0.05286039380768937
+Accuracy train: 0.9674 | Accuracy val: 0.9402 | F1-Score val: 0.8295
+
+--- Probando Arquitectura: (32, 16) | LR: 0.001 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 0.39967387116921194
+Epoch: 2 , Loss: 0.210942033467949
+Epoch: 3 , Loss: 0.16025626408433283
+Epoch: 4 , Loss: 0.12916469616588663
+Epoch: 5 , Loss: 0.10482893197126567
+Epoch: 6 , Loss: 0.08025166304603568
+Epoch: 7 , Loss: 0.0685912170991059
+Epoch: 8 , Loss: 0.05936483376984419
+Epoch: 9 , Loss: 0.05111215666483359
+Epoch: 10 , Loss: 0.04871084687901391
+Epoch: 11 , Loss: 0.04340974725276691
+Epoch: 12 , Loss: 0.03834259123797584
+Epoch: 13 , Loss: 0.038129027086176104
+Epoch: 14 , Loss: 0.0311177888859916
+Epoch: 15 , Loss: 0.03149353127108325
+Accuracy train: 0.9861 | Accuracy val: 0.9490 | F1-Score val: 0.8406
+
+--- Probando Arquitectura: (32, 16) | LR: 0.001 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.40223701168516035
+Epoch: 2 , Loss: 0.2011324969252617
+Epoch: 3 , Loss: 0.14687219539999757
+Epoch: 4 , Loss: 0.10843601487956799
+Epoch: 5 , Loss: 0.0852771278483622
+Epoch: 6 , Loss: 0.07029367164980954
+Epoch: 7 , Loss: 0.0592611498982899
+Epoch: 8 , Loss: 0.05289235357803288
+Epoch: 9 , Loss: 0.04980752634609192
+Epoch: 10 , Loss: 0.04063952315451632
+Epoch: 11 , Loss: 0.03655227117944279
+Epoch: 12 , Loss: 0.037376815528434075
+Epoch: 13 , Loss: 0.03354604890349159
+Epoch: 14 , Loss: 0.031461982059632104
+Epoch: 15 , Loss: 0.03462852239818787
+Accuracy train: 0.9884 | Accuracy val: 0.9518 | F1-Score val: 0.8410
+
+--- Probando Arquitectura: (64, 32) | LR: 0.1 | Optimizador: sgd ---
+Epoch: 1 , Loss: 1.8619153008061167
+Epoch: 2 , Loss: 2.1632017787440576
+Epoch: 3 , Loss: 2.1628124503646835
+Epoch: 4 , Loss: 2.162676692783968
+Epoch: 5 , Loss: 2.162606821543917
+Epoch: 6 , Loss: 2.1625641245816953
+Epoch: 7 , Loss: 2.162535302097792
+Epoch: 8 , Loss: 2.1625145274733404
+Epoch: 9 , Loss: 2.1624988394133564
+Epoch: 10 , Loss: 2.1624865719733912
+Epoch: 11 , Loss: 2.1624767156116897
+Epoch: 12 , Loss: 2.1624686227022005
+Epoch: 13 , Loss: 2.16246185861302
+Epoch: 14 , Loss: 2.162456120758753
+Epoch: 15 , Loss: 2.162451191975157
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (64, 32) | LR: 0.1 | Optimizador: momentum ---
+Epoch: 1 , Loss: 2.3871550356910007
+Epoch: 2 , Loss: 2.3781267871495224
+Epoch: 3 , Loss: 2.3780947709651437
+Epoch: 4 , Loss: 2.3780816347304556
+Epoch: 5 , Loss: 2.3780744297973704
+Epoch: 6 , Loss: 2.37806986990716
+Epoch: 7 , Loss: 2.3780667219631564
+Epoch: 8 , Loss: 2.378064417232669
+Epoch: 9 , Loss: 2.3780626565845746
+Epoch: 10 , Loss: 2.3780612675329413
+Epoch: 11 , Loss: 2.378060143583051
+Epoch: 12 , Loss: 2.3780592154088134
+Epoch: 13 , Loss: 2.378058435930578
+Epoch: 14 , Loss: 2.378057772050298
+Epoch: 15 , Loss: 2.3780571998182753
+Accuracy train: 0.1258 | Accuracy val: 0.1257 | F1-Score val: 0.0223
+
+--- Probando Arquitectura: (64, 32) | LR: 0.1 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 2.3003355194338035
+Epoch: 2 , Loss: 2.21341622400899
+Epoch: 3 , Loss: 2.2101802958524077
+Epoch: 4 , Loss: 2.210180295898251
+Epoch: 5 , Loss: 2.2101802958917416
+Epoch: 6 , Loss: 2.2101802958898227
+Epoch: 7 , Loss: 2.2101802958889047
+Epoch: 8 , Loss: 2.210180295888354
+Epoch: 9 , Loss: 2.2101802958879913
+Epoch: 10 , Loss: 2.21018029588773
+Epoch: 11 , Loss: 2.2101802958875405
+Epoch: 12 , Loss: 2.210180295887388
+Epoch: 13 , Loss: 2.2101802958872647
+Epoch: 14 , Loss: 2.210180295887165
+Epoch: 15 , Loss: 2.2101802958870813
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (64, 32) | LR: 0.1 | Optimizador: adam ---
+Epoch: 1 , Loss: 2.2293621962852836
+Epoch: 2 , Loss: 2.2109292781816654
+Epoch: 3 , Loss: 2.210929231640795
+Epoch: 4 , Loss: 2.2109292312625133
+Epoch: 5 , Loss: 2.2109292312531212
+Epoch: 6 , Loss: 2.2109292312508484
+Epoch: 7 , Loss: 2.2109292312498026
+Epoch: 8 , Loss: 2.210929231249205
+Epoch: 9 , Loss: 2.2109292312488114
+Epoch: 10 , Loss: 2.2109292312485405
+Epoch: 11 , Loss: 2.210929231248336
+Epoch: 12 , Loss: 2.2109292312481905
+Epoch: 13 , Loss: 2.210929231248068
+Epoch: 14 , Loss: 2.2109292312479694
+Epoch: 15 , Loss: 2.210929231247887
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (64, 32) | LR: 0.01 | Optimizador: sgd ---
+Epoch: 1 , Loss: 0.46150944025300356
+Epoch: 2 , Loss: 0.20437953960060515
+Epoch: 3 , Loss: 0.13876434729590303
+Epoch: 4 , Loss: 0.10137695674213536
+Epoch: 5 , Loss: 0.07304686282912208
+Epoch: 6 , Loss: 0.056937654721875564
+Epoch: 7 , Loss: 0.046068756030087345
+Epoch: 8 , Loss: 0.0381269710567114
+Epoch: 9 , Loss: 0.02972079817289708
+Epoch: 10 , Loss: 0.026961611465092794
+Epoch: 11 , Loss: 0.02829175382043824
+Epoch: 12 , Loss: 0.028286725241146518
+Epoch: 13 , Loss: 0.03426777191696516
+Epoch: 14 , Loss: 0.025160395140926405
+Epoch: 15 , Loss: 0.02222651717890634
+Accuracy train: 0.9977 | Accuracy val: 0.9627 | F1-Score val: 0.8557
+
+--- Probando Arquitectura: (64, 32) | LR: 0.01 | Optimizador: momentum ---
+Epoch: 1 , Loss: 1.5326580158706762
+Epoch: 2 , Loss: 1.6851126083069028
+Epoch: 3 , Loss: 1.93143632228361
+Epoch: 4 , Loss: 1.9873835902900874
+Epoch: 5 , Loss: 1.9253088843269721
+Epoch: 6 , Loss: 2.1141804365103516
+Epoch: 7 , Loss: 1.8281432719083104
+Epoch: 8 , Loss: 1.7181992607102585
+Epoch: 9 , Loss: 1.8872803986830475
+Epoch: 10 , Loss: 2.1292483909551163
+Epoch: 11 , Loss: 2.1282982418024035
+Epoch: 12 , Loss: 2.1279520318358593
+Epoch: 13 , Loss: 2.127765821804648
+Epoch: 14 , Loss: 2.127665597019205
+Epoch: 15 , Loss: 2.127612294806055
+Accuracy train: 0.1357 | Accuracy val: 0.1325 | F1-Score val: 0.0427
+
+--- Probando Arquitectura: (64, 32) | LR: 0.01 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 1.1274566907612789
+Epoch: 2 , Loss: 0.5728173514406713
+Epoch: 3 , Loss: 0.49973780534783796
+Epoch: 4 , Loss: 0.4527132367004117
+Epoch: 5 , Loss: 0.4307867162397539
+Epoch: 6 , Loss: 0.4054269584258138
+Epoch: 7 , Loss: 0.44883532620209154
+Epoch: 8 , Loss: 0.4472118830960136
+Epoch: 9 , Loss: 0.41727760064999436
+Epoch: 10 , Loss: 0.39236525950582857
+Epoch: 11 , Loss: 0.41329962812959586
+Epoch: 12 , Loss: 0.3793916481750378
+Epoch: 13 , Loss: 0.3829874782161343
+Epoch: 14 , Loss: 0.3541433376032594
+Epoch: 15 , Loss: 0.34807357793394783
+Accuracy train: 0.9141 | Accuracy val: 0.8956 | F1-Score val: 0.7277
+
+--- Probando Arquitectura: (64, 32) | LR: 0.01 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.6712950484545326
+Epoch: 2 , Loss: 0.4747682116960668
+Epoch: 3 , Loss: 0.46832790631678034
+Epoch: 4 , Loss: 0.4638390048066942
+Epoch: 5 , Loss: 0.4436680756438593
+Epoch: 6 , Loss: 0.46717713901213564
+Epoch: 7 , Loss: 0.4555608443782746
+Epoch: 8 , Loss: 0.4359163233616106
+Epoch: 9 , Loss: 0.4298025109516264
+Epoch: 10 , Loss: 0.40465682748605264
+Epoch: 11 , Loss: 0.3944630705357866
+Epoch: 12 , Loss: 0.4585022264338621
+Epoch: 13 , Loss: 0.4064687630845791
+Epoch: 14 , Loss: 0.4006807377147287
+Epoch: 15 , Loss: 0.38775278422205306
+Accuracy train: 0.9149 | Accuracy val: 0.8968 | F1-Score val: 0.7613
+
+--- Probando Arquitectura: (64, 32) | LR: 0.001 | Optimizador: sgd ---
+Epoch: 1 , Loss: 1.0779574126979699
+Epoch: 2 , Loss: 0.40088743477841454
+Epoch: 3 , Loss: 0.3180334118700455
+Epoch: 4 , Loss: 0.2744141103272393
+Epoch: 5 , Loss: 0.24381442106864468
+Epoch: 6 , Loss: 0.22029329565445166
+Epoch: 7 , Loss: 0.20148740424806436
+Epoch: 8 , Loss: 0.1856607934172633
+Epoch: 9 , Loss: 0.17188097996130305
+Epoch: 10 , Loss: 0.15964480252551128
+Epoch: 11 , Loss: 0.14877455564545997
+Epoch: 12 , Loss: 0.13893006180150094
+Epoch: 13 , Loss: 0.12978556716495576
+Epoch: 14 , Loss: 0.1212590151876989
+Epoch: 15 , Loss: 0.11335340234974356
+Accuracy train: 0.9685 | Accuracy val: 0.9454 | F1-Score val: 0.8337
+
+--- Probando Arquitectura: (64, 32) | LR: 0.001 | Optimizador: momentum ---
+Epoch: 1 , Loss: 0.44307498555937425
+Epoch: 2 , Loss: 0.19865053724599832
+Epoch: 3 , Loss: 0.13089434503599726
+Epoch: 4 , Loss: 0.091889757895993
+Epoch: 5 , Loss: 0.06798442117220276
+Epoch: 6 , Loss: 0.048779531940486516
+Epoch: 7 , Loss: 0.03518286266040241
+Epoch: 8 , Loss: 0.038483296849691345
+Epoch: 9 , Loss: 0.036777161800223813
+Epoch: 10 , Loss: 0.039508340889466746
+Epoch: 11 , Loss: 0.024536343581967896
+Epoch: 12 , Loss: 0.01549024555441628
+Epoch: 13 , Loss: 0.023055849400340916
+Epoch: 14 , Loss: 0.017293864927277053
+Epoch: 15 , Loss: 0.013122895630881514
+Accuracy train: 0.9943 | Accuracy val: 0.9534 | F1-Score val: 0.8455
+
+--- Probando Arquitectura: (64, 32) | LR: 0.001 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 0.31844046572143647
+Epoch: 2 , Loss: 0.15142867047817798
+Epoch: 3 , Loss: 0.10364400735216635
+Epoch: 4 , Loss: 0.07476652262062561
+Epoch: 5 , Loss: 0.06099067340076382
+Epoch: 6 , Loss: 0.05157412896033963
+Epoch: 7 , Loss: 0.03901539059124399
+Epoch: 8 , Loss: 0.04432594838325398
+Epoch: 9 , Loss: 0.034599724560147996
+Epoch: 10 , Loss: 0.03975043580043834
+Epoch: 11 , Loss: 0.03646768341830045
+Epoch: 12 , Loss: 0.030535141474433338
+Epoch: 13 , Loss: 0.032949646658780474
+Epoch: 14 , Loss: 0.02896791921313332
+Epoch: 15 , Loss: 0.027265964863024354
+Accuracy train: 0.9938 | Accuracy val: 0.9594 | F1-Score val: 0.8484
+
+--- Probando Arquitectura: (64, 32) | LR: 0.001 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.3598645849683338
+Epoch: 2 , Loss: 0.16551308495630726
+Epoch: 3 , Loss: 0.11132123449652646
+Epoch: 4 , Loss: 0.08102007897571575
+Epoch: 5 , Loss: 0.06565657754772161
+Epoch: 6 , Loss: 0.053039792714620636
+Epoch: 7 , Loss: 0.04860402917098588
+Epoch: 8 , Loss: 0.04615151243280779
+Epoch: 9 , Loss: 0.03908057559097583
+Epoch: 10 , Loss: 0.03900743128720895
+Epoch: 11 , Loss: 0.027392140628379042
+Epoch: 12 , Loss: 0.02987113966384652
+Epoch: 13 , Loss: 0.03760695650398038
+Epoch: 14 , Loss: 0.030556530493269334
+Epoch: 15 , Loss: 0.02101365513332711
+Accuracy train: 0.9941 | Accuracy val: 0.9671 | F1-Score val: 0.8622
+
+--- Probando Arquitectura: (128, 64) | LR: 0.1 | Optimizador: sgd ---
+Epoch: 1 , Loss: 2.0623982558315737
+Epoch: 2 , Loss: 1.8573584949267106
+Epoch: 3 , Loss: 1.7715713190478124
+Epoch: 4 , Loss: 1.806402880413597
+Epoch: 5 , Loss: 2.0869530543534522
+Epoch: 6 , Loss: 1.9918419883106893
+Epoch: 7 , Loss: 1.9211065162142704
+Epoch: 8 , Loss: 1.858544089462864
+Epoch: 9 , Loss: 1.8330187175899948
+Epoch: 10 , Loss: 1.8038952505431471
+Epoch: 11 , Loss: 1.7630316582875132
+Epoch: 12 , Loss: 1.7374530557218424
+Epoch: 13 , Loss: 1.7253079607159416
+Epoch: 14 , Loss: 1.715898091572711
+Epoch: 15 , Loss: 1.6587833019619886
+Accuracy train: 0.2309 | Accuracy val: 0.2289 | F1-Score val: 0.0777
+
+--- Probando Arquitectura: (128, 64) | LR: 0.1 | Optimizador: momentum ---
+Epoch: 1 , Loss: 2.4026172327175432
+Epoch: 2 , Loss: 2.378127871471545
+Epoch: 3 , Loss: 2.3780948333345178
+Epoch: 4 , Loss: 2.3780816659410564
+Epoch: 5 , Loss: 2.3780744485326224
+Epoch: 6 , Loss: 2.3780698824012
+Epoch: 7 , Loss: 2.3780667308894334
+Epoch: 8 , Loss: 2.378064423928482
+Epoch: 9 , Loss: 2.3780626617931144
+Epoch: 10 , Loss: 2.378061271700204
+Epoch: 11 , Loss: 2.378060146992918
+Epoch: 12 , Loss: 2.3780592182505873
+Epoch: 13 , Loss: 2.3780584383352776
+Epoch: 14 , Loss: 2.378057774111586
+Epoch: 15 , Loss: 2.3780572016048036
+Accuracy train: 0.1258 | Accuracy val: 0.1257 | F1-Score val: 0.0223
+
+--- Probando Arquitectura: (128, 64) | LR: 0.1 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 2.3387887720450347
+Epoch: 2 , Loss: 2.209339812963335
+Epoch: 3 , Loss: 2.20933968633897
+Epoch: 4 , Loss: 2.2093396862125196
+Epoch: 5 , Loss: 2.2093396862066075
+Epoch: 6 , Loss: 2.209339686204782
+Epoch: 7 , Loss: 2.2093396862038652
+Epoch: 8 , Loss: 2.2093396862033376
+Epoch: 9 , Loss: 2.209339686202973
+Epoch: 10 , Loss: 2.2093396862027235
+Epoch: 11 , Loss: 2.2093396862025374
+Epoch: 12 , Loss: 2.209339686202394
+Epoch: 13 , Loss: 2.209339686202275
+Epoch: 14 , Loss: 2.209339686202178
+Epoch: 15 , Loss: 2.209339686202095
+Accuracy train: 0.1193 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (128, 64) | LR: 0.1 | Optimizador: adam ---
+Epoch: 1 , Loss: 2.226361269606892
+Epoch: 2 , Loss: 2.2109292883008993
+Epoch: 3 , Loss: 2.2109292316799043
+Epoch: 4 , Loss: 2.2109292312630138
+Epoch: 5 , Loss: 2.210929231253194
+Epoch: 6 , Loss: 2.2109292312508777
+Epoch: 7 , Loss: 2.210929231249819
+Epoch: 8 , Loss: 2.210929231249216
+Epoch: 9 , Loss: 2.21092923124882
+Epoch: 10 , Loss: 2.2109292312485453
+Epoch: 11 , Loss: 2.210929231248342
+Epoch: 12 , Loss: 2.2109292312481927
+Epoch: 13 , Loss: 2.21092923124807
+Epoch: 14 , Loss: 2.2109292312479707
+Epoch: 15 , Loss: 2.2109292312478894
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (128, 64) | LR: 0.01 | Optimizador: sgd ---
+Epoch: 1 , Loss: 0.38412859768289
+Epoch: 2 , Loss: 0.16784499545933532
+Epoch: 3 , Loss: 0.10208314707308533
+Epoch: 4 , Loss: 0.06469307456792461
+Epoch: 5 , Loss: 0.041263260350605284
+Epoch: 6 , Loss: 0.02371967230294613
+Epoch: 7 , Loss: 0.018188985133071593
+Epoch: 8 , Loss: 0.013715581151413163
+Epoch: 9 , Loss: 0.009355375722041908
+Epoch: 10 , Loss: 0.005143931667226005
+Epoch: 11 , Loss: 0.002189030713793151
+Epoch: 12 , Loss: 0.0011564432253600122
+Epoch: 13 , Loss: 0.008148584434439549
+Epoch: 14 , Loss: 0.0076349243390316955
+Epoch: 15 , Loss: 0.008453146758218188
+Accuracy train: 0.9985 | Accuracy val: 0.9675 | F1-Score val: 0.8554
+
+--- Probando Arquitectura: (128, 64) | LR: 0.01 | Optimizador: momentum ---
+Epoch: 1 , Loss: 1.8331221303944494
+Epoch: 2 , Loss: 2.1635261497750418
+Epoch: 3 , Loss: 2.1631288486654823
+Epoch: 4 , Loss: 2.1629916593065097
+Epoch: 5 , Loss: 2.1629212872523786
+Epoch: 6 , Loss: 2.1628783593234733
+Epoch: 7 , Loss: 2.1628494122073256
+Epoch: 8 , Loss: 2.1628285630797657
+Epoch: 9 , Loss: 2.1628128271417144
+Epoch: 10 , Loss: 2.1628005272283057
+Epoch: 11 , Loss: 2.1627906479007133
+Epoch: 12 , Loss: 2.162782538197791
+Epoch: 13 , Loss: 2.162775761489046
+Epoch: 14 , Loss: 2.1627700139338484
+Epoch: 15 , Loss: 2.1627650775484644
+Accuracy train: 0.1189 | Accuracy val: 0.1189 | F1-Score val: 0.0212
+
+--- Probando Arquitectura: (128, 64) | LR: 0.01 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 1.9469348934712698
+Epoch: 2 , Loss: 1.830531885594382
+Epoch: 3 , Loss: 1.8244001242972547
+Epoch: 4 , Loss: 1.8292052844612372
+Epoch: 5 , Loss: 1.826422984239584
+Epoch: 6 , Loss: 1.8200152512734458
+Epoch: 7 , Loss: 1.8124652020511198
+Epoch: 8 , Loss: 1.8184195751784435
+Epoch: 9 , Loss: 1.8312248214019007
+Epoch: 10 , Loss: 1.8209558159426595
+Epoch: 11 , Loss: 1.826770487536212
+Epoch: 12 , Loss: 1.7975835784353504
+Epoch: 13 , Loss: 1.80327827497745
+Epoch: 14 , Loss: 1.818825319092856
+Epoch: 15 , Loss: 1.805243098927522
+Accuracy train: 0.2490 | Accuracy val: 0.2510 | F1-Score val: 0.1219
+
+--- Probando Arquitectura: (128, 64) | LR: 0.01 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.6928523686397275
+Epoch: 2 , Loss: 0.5273741790777108
+Epoch: 3 , Loss: 0.4771209927093463
+Epoch: 4 , Loss: 0.46169149010245236
+Epoch: 5 , Loss: 0.44745051462343344
+Epoch: 6 , Loss: 0.4370379293869033
+Epoch: 7 , Loss: 0.4376296701909016
+Epoch: 8 , Loss: 0.4284337016478402
+Epoch: 9 , Loss: 0.43670010610797244
+Epoch: 10 , Loss: 0.39555683971471706
+Epoch: 11 , Loss: 0.39382254683366585
+Epoch: 12 , Loss: 0.442068964777285
+Epoch: 13 , Loss: 0.4118079051686279
+Epoch: 14 , Loss: 0.36512132083330373
+Epoch: 15 , Loss: 0.3548546485901232
+Accuracy train: 0.9319 | Accuracy val: 0.9124 | F1-Score val: 0.7885
+
+--- Probando Arquitectura: (128, 64) | LR: 0.001 | Optimizador: sgd ---
+Epoch: 1 , Loss: 0.8351613007611126
+Epoch: 2 , Loss: 0.33250005468962845
+Epoch: 3 , Loss: 0.2667443288816226
+Epoch: 4 , Loss: 0.23044524133329566
+Epoch: 5 , Loss: 0.20368922275439727
+Epoch: 6 , Loss: 0.1821025274369497
+Epoch: 7 , Loss: 0.1641567666651409
+Epoch: 8 , Loss: 0.14882081021233057
+Epoch: 9 , Loss: 0.13536333657703647
+Epoch: 10 , Loss: 0.12323972250742228
+Epoch: 11 , Loss: 0.11252438299599286
+Epoch: 12 , Loss: 0.10279675574861466
+Epoch: 13 , Loss: 0.09400190089383997
+Epoch: 14 , Loss: 0.08590583218621596
+Epoch: 15 , Loss: 0.07847260640906795
+Accuracy train: 0.9812 | Accuracy val: 0.9506 | F1-Score val: 0.8440
+
+--- Probando Arquitectura: (128, 64) | LR: 0.001 | Optimizador: momentum ---
+Epoch: 1 , Loss: 0.38558012762456995
+Epoch: 2 , Loss: 0.15923615995796028
+Epoch: 3 , Loss: 0.09725733033895176
+Epoch: 4 , Loss: 0.058702513061345406
+Epoch: 5 , Loss: 0.037973707957712405
+Epoch: 6 , Loss: 0.021284728364018936
+Epoch: 7 , Loss: 0.016486192154542834
+Epoch: 8 , Loss: 0.011278726927089307
+Epoch: 9 , Loss: 0.01129682877518717
+Epoch: 10 , Loss: 0.0053520045596197755
+Epoch: 11 , Loss: 0.0024793675770582333
+Epoch: 12 , Loss: 0.0011116035906713131
+Epoch: 13 , Loss: 0.001678651410372841
+Epoch: 14 , Loss: 0.0007802399174230361
+Epoch: 15 , Loss: 0.0004900170412149709
+Accuracy train: 1.0000 | Accuracy val: 0.9715 | F1-Score val: 0.8629
+
+--- Probando Arquitectura: (128, 64) | LR: 0.001 | Optimizador: rmsprop ---
+Epoch: 1 , Loss: 0.30918716350381104
+Epoch: 2 , Loss: 0.15123283808040783
+Epoch: 3 , Loss: 0.09561049243738634
+Epoch: 4 , Loss: 0.07753557287690054
+Epoch: 5 , Loss: 0.06421756005843629
+Epoch: 6 , Loss: 0.0532246934514733
+Epoch: 7 , Loss: 0.05259985001944894
+Epoch: 8 , Loss: 0.045805269099131296
+Epoch: 9 , Loss: 0.03716295883315201
+Epoch: 10 , Loss: 0.03612600871074499
+Epoch: 11 , Loss: 0.03644894064721817
+Epoch: 12 , Loss: 0.036659780718410154
+Epoch: 13 , Loss: 0.04112155653536552
+Epoch: 14 , Loss: 0.023862630296612824
+Epoch: 15 , Loss: 0.04664667036645843
+Accuracy train: 0.9937 | Accuracy val: 0.9663 | F1-Score val: 0.8629
+
+--- Probando Arquitectura: (128, 64) | LR: 0.001 | Optimizador: adam ---
+Epoch: 1 , Loss: 0.32637240512528076
+Epoch: 2 , Loss: 0.15606112425958696
+Epoch: 3 , Loss: 0.10514498163402386
+Epoch: 4 , Loss: 0.08366151301277776
+Epoch: 5 , Loss: 0.07102820131904981
+Epoch: 6 , Loss: 0.057381839373968645
+Epoch: 7 , Loss: 0.05122967096723382
+Epoch: 8 , Loss: 0.049918496867847
+Epoch: 9 , Loss: 0.057906176072981944
+Epoch: 10 , Loss: 0.04908933740505273
+Epoch: 11 , Loss: 0.04289470804398982
+Epoch: 12 , Loss: 0.03714299506307974
+Epoch: 13 , Loss: 0.03851243619490714
+Epoch: 14 , Loss: 0.03249924870303006
+Epoch: 15 , Loss: 0.041874176558930304
+Accuracy train: 0.9957 | Accuracy val: 0.9683 | F1-Score val: 0.8628
+
+==================================================
+Búsqueda finalizada. Mejor Accuracy en validación: 0.9715
+Mejores hiperparámetros: {'hidden1': 128, 'hidden2': 64, 'lr': 0.001, 'optimizer': 'momentum'}
+==================================================
+Epoch: 1 , Loss: 0.3378363049588323
+Epoch: 2 , Loss: 0.14432074558959093
+Epoch: 3 , Loss: 0.09230108494187256
+Epoch: 4 , Loss: 0.06211036550632501
+Epoch: 5 , Loss: 0.04073006451054463
+Epoch: 6 , Loss: 0.03053711273642612
+Epoch: 7 , Loss: 0.018723579480859155
+Epoch: 8 , Loss: 0.015199862372532858
+Epoch: 9 , Loss: 0.009993368085820391
+Epoch: 10 , Loss: 0.019576924879485157
+Epoch: 11 , Loss: 0.01934051418793752
+Epoch: 12 , Loss: 0.010657106610971369
+Epoch: 13 , Loss: 0.006048393400160155
+Epoch: 14 , Loss: 0.009654390670541711
+Epoch: 15 , Loss: 0.0033405338207768975
+Epoch: 16 , Loss: 0.006699578777574067
+Epoch: 17 , Loss: 0.0013939369357064556
+Epoch: 18 , Loss: 0.000307125877507016
+Epoch: 19 , Loss: 0.00022966921027670965
+Epoch: 20 , Loss: 0.0001840316506031658
+Epoch: 21 , Loss: 0.00015745021655117416
+Epoch: 22 , Loss: 0.0001389459582240866
+Epoch: 23 , Loss: 0.00012502234979615656
+Epoch: 24 , Loss: 0.00011407191875595287
+Epoch: 25 , Loss: 0.00010519724063567934
+Epoch: 26 , Loss: 9.780892389526698e-05
+Epoch: 27 , Loss: 9.152960710992868e-05
+Epoch: 28 , Loss: 8.611008347630284e-05
+Epoch: 29 , Loss: 8.147360995787918e-05
+Epoch: 30 , Loss: 7.734920438350351e-05
+Epoch: 31 , Loss: 7.364373894758568e-05
+Epoch: 32 , Loss: 7.035991523821019e-05
+Epoch: 33 , Loss: 6.73687359734648e-05
+Epoch: 34 , Loss: 6.46664041249533e-05
+Epoch: 35 , Loss: 6.217807905373189e-05
+Epoch: 36 , Loss: 5.990500288583156e-05
+Epoch: 37 , Loss: 5.778221781822916e-05
+Epoch: 38 , Loss: 5.584413353297319e-05
+Epoch: 39 , Loss: 5.402743829351186e-05
+Epoch: 40 , Loss: 5.234961827323513e-05
+Epoch: 41 , Loss: 5.0781780751361654e-05
+Epoch: 42 , Loss: 4.931745975236254e-05
+Epoch: 43 , Loss: 4.793825612614442e-05
+Epoch: 44 , Loss: 4.663068500652944e-05
+Epoch: 45 , Loss: 4.5434600035997464e-05
+Epoch: 46 , Loss: 4.425466919582021e-05
+Epoch: 47 , Loss: 4.3155825018558166e-05
+Epoch: 48 , Loss: 4.21020912656264e-05
+Epoch: 49 , Loss: 4.110508695696558e-05
+Epoch: 50 , Loss: 4.017080198635807e-05
+Model Accuracy: 1.0
+Precision: 0.9, Recall: 0.9, F1-Score: 0.9
+Accuracy: 0.8738
+Precision: 0.7922, Recall: 0.8702, F1-Score: 0.8276

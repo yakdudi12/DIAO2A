@@ -1,0 +1,92 @@
+<class 'pandas.DataFrame'>
+RangeIndex: 24501 entries, 0 to 24500
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   label   24501 non-null  int64 
+ 1   image   24501 non-null  object
+dtypes: int64(1), object(1)
+memory usage: 383.0+ KB
+None
+   label                                              image
+0      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+1      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+2      6  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+3      0  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+4      2  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ...
+<class 'pandas.DataFrame'>
+RangeIndex: 24501 entries, 0 to 24500
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   label   24501 non-null  int64 
+ 1   image   24501 non-null  object
+dtypes: int64(1), object(1)
+memory usage: 383.0+ KB
+None
+label
+0    2795
+1    3212
+2    2817
+3    2895
+4    2788
+5     785
+6    2825
+7    2969
+8     585
+9    2830
+Name: count, dtype: int64
+Epoch: 1 , Loss: 0.30186384101949154
+Epoch: 2 , Loss: 0.13412083274793604
+Epoch: 3 , Loss: 0.08601922036704217
+Epoch: 4 , Loss: 0.06141051159160928
+Epoch: 5 , Loss: 0.04832160693367037
+Epoch: 6 , Loss: 0.04229132339646592
+Epoch: 7 , Loss: 0.03093460524718418
+Epoch: 8 , Loss: 0.033426668019636216
+Epoch: 9 , Loss: 0.024486887313732254
+Epoch: 10 , Loss: 0.02436700322483384
+Epoch: 11 , Loss: 0.0239959559174782
+Epoch: 12 , Loss: 0.01405116716479994
+Epoch: 13 , Loss: 0.031172569119942446
+Epoch: 14 , Loss: 0.024137831936797936
+Epoch: 15 , Loss: 0.015820948978056505
+Epoch: 16 , Loss: 0.016289595133954494
+Epoch: 17 , Loss: 0.016622999067738432
+Epoch: 18 , Loss: 0.017418417528056004
+Epoch: 19 , Loss: 0.011755908090482626
+Epoch: 20 , Loss: 0.019186250920058583
+Epoch: 21 , Loss: 0.013626813606086832
+Epoch: 22 , Loss: 0.008360230563869187
+Epoch: 23 , Loss: 0.004033300122130889
+Epoch: 24 , Loss: 0.005831458035242323
+Epoch: 25 , Loss: 0.0010569392511045705
+Epoch: 26 , Loss: 0.003095666306829582
+Epoch: 27 , Loss: 0.004102319289961519
+Epoch: 28 , Loss: 0.0061579399414667816
+Epoch: 29 , Loss: 0.004149837278892747
+Epoch: 30 , Loss: 0.003454625011926014
+Epoch: 31 , Loss: 0.0005616495228816359
+Epoch: 32 , Loss: 0.00016063316185495279
+Epoch: 33 , Loss: 6.0877674982846004e-05
+Epoch: 34 , Loss: 4.907700035304319e-05
+Epoch: 35 , Loss: 4.301661372669516e-05
+Epoch: 36 , Loss: 3.864241351028039e-05
+Epoch: 37 , Loss: 3.531748085926922e-05
+Epoch: 38 , Loss: 3.263270925050503e-05
+Epoch: 39 , Loss: 3.038975955655173e-05
+Epoch: 40 , Loss: 2.847942702288862e-05
+Epoch: 41 , Loss: 2.686673232953191e-05
+Epoch: 42 , Loss: 2.543605270402545e-05
+Epoch: 43 , Loss: 2.4182551709848295e-05
+Epoch: 44 , Loss: 2.3061303213802392e-05
+Epoch: 45 , Loss: 2.2052669968527164e-05
+Epoch: 46 , Loss: 2.114194156849846e-05
+Epoch: 47 , Loss: 2.0310002874295867e-05
+Epoch: 48 , Loss: 1.9540325107055114e-05
+Epoch: 49 , Loss: 1.885052027342589e-05
+Epoch: 50 , Loss: 1.820433324287565e-05
+Model Accuracy: 1.0
+Precision: 1.0, Recall: 1.0, F1-Score: 1.0
+Accuracy: 0.9696
+Precision: 0.9697, Recall: 0.9689, F1-Score: 0.9690
