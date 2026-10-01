@@ -13,7 +13,8 @@ from data.mlpperceptron import (MLP, train_mlp, compute_accuracy_mlp, compute_me
 SEED = 42
 np.random.seed(SEED)
 
-DATA_DIR = Path(__file__).parent / "data"
+# Los CSV y los resultados siguen en TP3/data
+DATA_DIR = Path(__file__).parent.parent / "data"
 RESULTS_DIR = DATA_DIR / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
 

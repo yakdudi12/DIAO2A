@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# perceptron, activations y optimizer siguen en TP3/ porque los usa ejercicio1.ipynb
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import numpy as np
 from perceptron import Perceptron
 from typing import Callable

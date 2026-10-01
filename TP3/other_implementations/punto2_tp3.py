@@ -9,7 +9,8 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from data.digit_dataset_loader import load_dataset , get_image , plot_sample
 from data.mlpperceptron import MLP, train_mlp, compute_accuracy_mlp, compute_metrics_mlp, MLP2
 
-DATA_DIR = Path(__file__).parent / "data"
+# Los CSV y los resultados siguen en TP3/data
+DATA_DIR = Path(__file__).parent.parent / "data"
 RESULTS_DIR = DATA_DIR / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
 
