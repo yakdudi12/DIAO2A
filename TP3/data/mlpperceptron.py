@@ -123,7 +123,8 @@ class MLP2:
         return self.a3
     
     def backward(self, x, y, output, lr):
-        x = x.reshape(1, -1)
+        x = np.atleast_2d(x)
+        batch_size = x.shape[0]
 
         if self.acfunc == "sigmoid":
             # 1. Error en la salida (Cross-Entropy + Softmax)
@@ -153,8 +154,10 @@ class MLP2:
             np.dot(self.a1.T, dz2), np.sum(dz2, axis=0, keepdims=True),
             np.dot(self.a2.T, dz3), np.sum(dz3, axis=0, keepdims=True),
         ]
+        # Promedio sobre el lote (con una sola muestra no cambia nada)
+        grads = [g / batch_size for g in grads]
         self._step(grads, lr)
-    
+
 #Training Loop
 def train_mlp(model, X_train, y_train, epochs):
     hist_dic = {"epoch": [], "loss": []}
@@ -172,6 +175,57 @@ def train_mlp(model, X_train, y_train, epochs):
         hist_dic["epoch"].append(i + 1)
         hist_dic["loss"].append(epoch_loss)
         print(f"Epoch: {i+1} , Loss: {epoch_loss}")
+
+    return hist_dic
+
+def evaluate_mlp(model, X, y_ohe):
+    '''Loss y accuracy sobre todo el conjunto en una sola pasada matricial'''
+    output = model.forward(X)
+    loss = -np.sum(y_ohe * np.log(output + 1e-15)) / len(y_ohe)
+    acc = np.mean(output.argmax(axis=1) == y_ohe.argmax(axis=1))
+    return loss, acc
+
+#Training Loop por mini-batches, con shuffle por epoch y seguimiento de validacion
+def train_mlp_minibatch(model, X_train, y_train, epochs, batch_size=32, X_val=None, y_val=None,
+                        seed=None, restore_best=True):
+    rng = np.random.default_rng(seed)
+    n = len(y_train)
+    hist_dic = {"epoch": [], "loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+    best_val_acc, best_epoch, best_params = -1.0, 0, None
+
+    for i in range(epochs):
+        idx = rng.permutation(n)
+        total_loss = 0.0
+        correct = 0
+        for start in range(0, n, batch_size):
+            batch = idx[start:start + batch_size]
+            x, y = X_train[batch], y_train[batch]
+            output = model.forward(x)
+            total_loss += -np.sum(y * np.log(output + 1e-15))
+            correct += np.sum(output.argmax(axis=1) == y.argmax(axis=1))
+            model.backward(x, y, output, model.lr)
+
+        hist_dic["epoch"].append(i + 1)
+        hist_dic["loss"].append(total_loss / n)
+        hist_dic["train_acc"].append(correct / n)
+        msg = f"Epoch: {i+1} , Loss: {total_loss / n:.5f} , Acc: {correct / n:.4f}"
+
+        if X_val is not None:
+            val_loss, val_acc = evaluate_mlp(model, X_val, y_val)
+            msg += f" , Val loss: {val_loss:.5f} , Val acc: {val_acc:.4f}"
+            if val_acc > best_val_acc:
+                best_val_acc, best_epoch = val_acc, i + 1
+                best_params = [p.copy() for p in model.params]
+        else:
+            val_loss, val_acc = np.nan, np.nan
+        hist_dic["val_loss"].append(val_loss)
+        hist_dic["val_acc"].append(val_acc)
+        print(msg)
+
+    if restore_best and best_params is not None:
+        for p, best in zip(model.params, best_params):
+            p[...] = best
+        print(f"Se restauran los pesos de la epoch {best_epoch} (val acc: {best_val_acc:.4f})")
 
     return hist_dic
 
