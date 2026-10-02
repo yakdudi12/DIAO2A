@@ -4,8 +4,9 @@ Este proyecto usa **Python** y **uv**.
 
 ## Trabajos prácticos
 
-- [TP1](TP1/)
+- [TP1 - Métodos de búsqueda para Sokoban](TP1/README.md)
 - [TP2 - Algoritmos genéticos con triángulos](TP2/README.md)
+- [TP3 - Perceptrón simple y multicapa](TP3/README.md)
 
 `uv` prepara automáticamente Python y las librerías necesarias para el trabajo práctico. También crea un entorno separado para evitar conflictos con otros proyectos.
 
