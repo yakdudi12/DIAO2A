@@ -70,6 +70,7 @@ TP3/
 ├── optimizer.py                #SGD, Momentum, RMSProp y Adam
 ├── mlp.py                      #DigitMLP, fit, aumento de datos y pesos por clase (ej. 2 y 3)
 ├── Enunciado TP3 - 2Q 2026.pdf
+├── TP3.pdf                     #Presentación del TP (diapositivas con resultados de los 3 ejercicios)
 ├── data and documentation.zip  #Paquete original de la cátedra
 ├── data/
 │   ├── fraud_dataset.csv
