@@ -374,3 +374,58 @@ def plot_planes(planes: np.ndarray, titles: list[str], suptitle: str, colorbar_l
         fig.supxlabel(colorbar_label, fontsize=9, color=INK_SECONDARY)
     fig.suptitle(suptitle, color=INK)
     return fig
+
+
+def plot_oja_convergence(histories: dict, direction: np.ndarray) -> plt.Figure:
+    """Alineación con PC1 y norma de los pesos por época, una línea por tasa de aprendizaje."""
+    colors = LINE_SERIES + ["#eda100"]
+    fig, axes = plt.subplots(1, 2, figsize=(12, 3.8))
+    for color, (label, history) in zip(colors, histories.items()):
+        epochs = np.arange(len(history))
+        cosine = np.abs(history @ direction) / np.linalg.norm(history, axis=1)
+        axes[0].plot(epochs, np.clip(1 - cosine, 1e-8, None), color=color, linewidth=2, label=label)
+        axes[1].plot(epochs, np.linalg.norm(history, axis=1), color=color, linewidth=2, label=label)
+    axes[0].set(yscale="log", xlabel="Época", ylabel="1 − |cos(w, PC1)|",
+                title="Distancia angular a PC1 (escala log)")
+    axes[1].axhline(1, color=INK_MUTED, linestyle="--", linewidth=1)
+    axes[1].set(xlabel="Época", ylabel="‖w‖", title="Norma de los pesos")
+    axes[0].legend(loc="lower left")
+    fig.tight_layout()
+    return fig
+
+
+def plot_oja_weights(weights: np.ndarray, reference: np.ndarray, features: list[str]) -> plt.Figure:
+    """Pesos aprendidos por Oja (barras) frente al autovector PC1 del PCA (marcas)."""
+    order = np.argsort(weights)
+    positions = np.arange(len(features))
+    fig, ax = plt.subplots(figsize=(7.5, 8))
+    colors = np.where(weights[order] >= 0, "#e34948", SERIES)
+    ax.barh(positions, weights[order], color=colors, height=0.7, label="Oja (w)")
+    ax.scatter(reference[order], positions, marker="|", s=160, color=INK, linewidths=2,
+               zorder=3, label="PCA (autovector PC1)")
+    ax.set_yticks(positions, [features[i] for i in order])
+    ax.axvline(0, color=BASELINE, linewidth=1)
+    ax.set(xlabel="Peso", title="Pesos del índice: Oja frente a PC1")
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def plot_index_comparison(index: np.ndarray, pc1_scores: np.ndarray, followers: pd.Series,
+                          topic: pd.Series) -> plt.Figure:
+    """Índice de Oja contra la proyección sobre PC1 y contra los seguidores."""
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
+    _scatter_by_topic(axes[0], pc1_scores, index, topic)
+    limits = [min(index.min(), pc1_scores.min()), max(index.max(), pc1_scores.max())]
+    axes[0].plot(limits, limits, color=INK_MUTED, linestyle="--", linewidth=1, zorder=1)
+    axes[0].set(xlabel="Proyección sobre PC1 (PCA)", ylabel="Índice de Oja",
+                title=f"Oja vs. PCA  (r = {np.corrcoef(index, pc1_scores)[0, 1]:.4f})")
+    _scatter_by_topic(axes[1], followers, index, topic)
+    axes[1].set_xscale("log")
+    r = np.corrcoef(index, np.log10(followers))[0, 1]
+    axes[1].set(xlabel="followers (escala log)", ylabel="Índice de Oja",
+                title=f"Índice de Oja vs. seguidores  (r con log10 = {r:.2f})")
+    _topic_legend(axes[1], loc="lower right")
+    fig.tight_layout()
+    return fig
