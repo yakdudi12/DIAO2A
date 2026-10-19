@@ -267,3 +267,110 @@ def plot_scores_by_topic(scores: np.ndarray, topic: pd.Series, n_components: int
     fig.suptitle("Scores por temática dominante (línea negra: media del grupo)", color=INK)
     fig.tight_layout()
     return fig
+
+
+# Secuencial de un solo tono (azul claro -> oscuro) para magnitudes como la matriz U.
+SEQUENTIAL = LinearSegmentedColormap.from_list(
+    "azul", ["#cde2fb", "#86b6ef", "#3987e5", "#256abf", "#104281", "#0d366b"]
+)
+
+# Series de líneas en el orden fijo de la paleta categórica.
+LINE_SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
+
+
+def plot_som_sweep(results: pd.DataFrame, x: str, hue: str,
+                   metrics=("QE", "TE", "varianza explicada", "neuronas vacías")) -> plt.Figure:
+    """Media ± desvío entre semillas de cada métrica, una línea por valor de `hue`."""
+    fig, axes = plt.subplots(1, len(metrics), figsize=(4 * len(metrics), 3.6))
+    summary = results.groupby([hue, x])[list(metrics)].agg(["mean", "std"])
+    for ax, metric in zip(axes, metrics):
+        for color, value in zip(LINE_SERIES, summary.index.get_level_values(0).unique()):
+            data = summary.loc[value, metric]
+            ax.errorbar(data.index, data["mean"], yerr=data["std"], color=color, linewidth=2,
+                        marker="o", markersize=5, capsize=3, label=f"{hue} = {value}")
+        ax.set(title=metric, xlabel=x)
+        ax.set_xticks(summary.index.get_level_values(1).unique())
+        if metric in ("varianza explicada", "neuronas vacías", "TE"):
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0%}"))
+    axes[0].legend(loc="upper right")
+    fig.tight_layout()
+    return fig
+
+
+def _grid_axes(ax, rows: int, cols: int) -> None:
+    ax.set_xlim(-0.5, cols - 0.5)
+    ax.set_ylim(rows - 0.5, -0.5)
+    ax.set_aspect("equal")
+    ax.set_xticks(range(cols))
+    ax.set_yticks(range(rows))
+    ax.set(xlabel="Columna", ylabel="Fila")
+    ax.grid(False)
+
+
+def plot_som_maps(model, X: np.ndarray, topic: pd.Series) -> plt.Figure:
+    """Creadores ubicados en su neurona ganadora (izquierda) y matriz U (derecha)."""
+    rows, cols = model.rows, model.cols
+    winners = model.predict(X)
+    hits = model.hits(X)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 6))
+    ax = axes[0]
+    _grid_axes(ax, rows, cols)
+    for r in range(rows):
+        for c in range(cols):
+            ax.add_patch(plt.Rectangle((c - 0.5, r - 0.5), 1, 1, facecolor="none",
+                                       edgecolor=GRID, linewidth=1))
+    for neuron in range(model.n_neurons):
+        members = np.flatnonzero(winners == neuron)
+        r, c = model.positions_[neuron]
+        angles = np.linspace(0, 2 * np.pi, len(members), endpoint=False) + np.pi / 2
+        radius = 0.0 if len(members) == 1 else 0.28
+        for angle, member in zip(angles, members):
+            style = TOPIC_STYLE[topic.iloc[member]]
+            ax.scatter(c + radius * np.cos(angle), r - radius * np.sin(angle), s=60,
+                       c=style["color"], marker=style["marker"], edgecolors="white",
+                       linewidths=1, zorder=3)
+    ax.set_title("Creadores por neurona ganadora")
+    _topic_legend(ax, loc="upper left", bbox_to_anchor=(1.0, 1.0))
+
+    ax = axes[1]
+    U = model.u_matrix()
+    image = ax.imshow(U, cmap=SEQUENTIAL)
+    _grid_axes(ax, rows, cols)
+    for (r, c), value in np.ndenumerate(U):
+        ink = "white" if value > U.min() + 0.55 * np.ptp(U) else INK
+        label = f"{value:.2f}\n{hits[r, c]} creador{'es' if hits[r, c] != 1 else ''}"
+        ax.text(c, r, label, ha="center", va="center", fontsize=7, color=ink)
+    fig.colorbar(image, ax=ax, shrink=0.8, label="Distancia media a las neuronas vecinas")
+    ax.set_title("Matriz U")
+    fig.tight_layout()
+    return fig
+
+
+def plot_planes(planes: np.ndarray, titles: list[str], suptitle: str, colorbar_label: str,
+                ncols: int = 4, shared_scale: bool = True) -> plt.Figure:
+    """Un heatmap de la grilla por plano (filas, columnas, n_planos).
+
+    Con `shared_scale` todos los planos usan la misma escala y una sola barra de color;
+    si no, cada uno usa su propio rango, útil cuando las magnitudes difieren mucho.
+    """
+    n = planes.shape[2]
+    ncols = min(ncols, n)
+    nrows = int(np.ceil(n / ncols))
+    rows, cols = planes.shape[:2]
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3.1 * ncols, 3.0 * nrows), squeeze=False)
+    for k, (ax, title) in enumerate(zip(axes.flat, titles)):
+        limit = float(np.abs(planes if shared_scale else planes[:, :, k]).max())
+        image = ax.imshow(planes[:, :, k], cmap=DIVERGING, vmin=-limit, vmax=limit)
+        _grid_axes(ax, rows, cols)
+        ax.set(title=title, xlabel="", ylabel="")
+        if not shared_scale:
+            fig.colorbar(image, ax=ax, shrink=0.75)
+    for ax in axes.flat[n:]:
+        ax.set_visible(False)
+    if shared_scale:
+        fig.colorbar(image, ax=axes, shrink=0.7, label=colorbar_label)
+    else:
+        fig.supxlabel(colorbar_label, fontsize=9, color=INK_SECONDARY)
+    fig.suptitle(suptitle, color=INK)
+    return fig
