@@ -429,3 +429,24 @@ def plot_index_comparison(index: np.ndarray, pc1_scores: np.ndarray, followers: 
     _topic_legend(axes[1], loc="lower right")
     fig.tight_layout()
     return fig
+
+
+def plot_strategy_comparison(table: pd.DataFrame, metric: str) -> plt.Figure:
+    """Barras horizontales agrupadas: una métrica por cliente y estrategia."""
+    clients = table.index.get_level_values(0).unique()
+    strategies = table.index.get_level_values(1).unique()
+    height = 0.8 / len(strategies)
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+    for k, (color, strategy) in enumerate(zip(LINE_SERIES, strategies)):
+        values = [table.loc[(client, strategy), metric] for client in clients]
+        positions = np.arange(len(clients)) - 0.4 + height * (k + 0.5)
+        ax.barh(positions, values, height=height * 0.9, color=color, label=strategy)
+        for y, value in zip(positions, values):
+            ax.text(value + 0.15, y, f"{value:.2f}", va="center", fontsize=7.5, color=INK_SECONDARY)
+    ax.set_yticks(range(len(clients)), clients)
+    ax.invert_yaxis()
+    ax.set(xlabel=f"{metric} (menor es mejor)", title=f"{metric} según la estrategia")
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
