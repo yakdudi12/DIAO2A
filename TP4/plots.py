@@ -1,4 +1,4 @@
-"""Gráficos del análisis exploratorio y del PCA."""
+"""Gráficos de los ejercicios del TP4."""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -448,5 +448,85 @@ def plot_strategy_comparison(table: pd.DataFrame, metric: str) -> plt.Figure:
     ax.set(xlabel=f"{metric} (menor es mejor)", title=f"{metric} según la estrategia")
     ax.grid(axis="y", visible=False)
     ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def plot_patterns(patterns, titles: list[str], ncols: int = 5, suptitle: str | None = None,
+                  size: float = 1.7) -> plt.Figure:
+    """Patrones ±1 como imágenes cuadradas, con +1 en negro."""
+    n = len(patterns)
+    ncols = min(ncols, n)
+    nrows = int(np.ceil(n / ncols))
+    lines = max(str(title).count("\n") + 1 for title in titles)
+    height = (size + 0.17 * lines) * nrows + (0.4 if suptitle else 0)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(size * ncols, height), squeeze=False)
+    for ax, pattern, title in zip(axes.flat, patterns, titles):
+        side = int(round(np.sqrt(np.size(pattern))))
+        ax.imshow(np.reshape(pattern, (side, side)), cmap="gray_r", vmin=-1, vmax=1)
+        if side <= 10:
+            # Separación entre píxeles para contar los que cambian en patrones chicos.
+            for edge in np.arange(side - 1) + 0.5:
+                ax.axhline(edge, color=GRID, linewidth=0.6)
+                ax.axvline(edge, color=GRID, linewidth=0.6)
+        ax.set_title(title, fontsize=8)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
+        for spine in ax.spines.values():
+            spine.set_visible(True)
+            spine.set_color(BASELINE)
+    for ax in axes.flat[n:]:
+        ax.set_visible(False)
+    if suptitle:
+        fig.suptitle(suptitle, color=INK)
+    fig.tight_layout()
+    return fig
+
+
+def plot_rates(tables: dict[str, pd.DataFrame], xlabel: str, ylabel: str = "Proporción",
+               suptitle: str | None = None, vline: tuple[float, str] | None = None,
+               x_percent: bool = True, ncols: int = 4) -> plt.Figure:
+    """Un panel por tabla: el índice es el eje x y cada columna, una línea (mismo color en
+    todos los paneles)."""
+    ncols = min(ncols, len(tables))
+    nrows = int(np.ceil(len(tables) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4.1 * ncols, 3.5 * nrows), squeeze=False,
+                             sharey=True)
+    percent = plt.FuncFormatter(lambda v, _: f"{v:.0%}")
+    for ax, (title, table) in zip(axes.flat, tables.items()):
+        for color, column in zip(LINE_SERIES, table.columns):
+            ax.plot(table.index, table[column], color=color, linewidth=2, marker="o",
+                    markersize=4, label=column)
+        if vline is not None:
+            ax.axvline(vline[0], color=INK_SECONDARY, linestyle="--", linewidth=1)
+            ax.text(vline[0], 0.5, f" {vline[1]}", fontsize=8, color=INK_SECONDARY)
+        ax.set(title=title, xlabel=xlabel, ylim=(-0.03, 1.03))
+        ax.yaxis.set_major_formatter(percent)
+        if x_percent:
+            ax.xaxis.set_major_formatter(percent)
+    for ax in axes.flat[len(tables):]:
+        ax.set_visible(False)
+    for ax in axes[:, 0]:
+        ax.set_ylabel(ylabel)
+    axes.flat[0].legend(loc="best")
+    if suptitle:
+        fig.suptitle(suptitle, color=INK)
+    fig.tight_layout()
+    return fig
+
+
+def plot_energy(curves: dict[str, np.ndarray], references: dict[str, float], title: str) -> plt.Figure:
+    """Energía después de cada neurona que cambia, una línea por consulta, con niveles de
+    referencia (por ejemplo, la energía de los patrones almacenados)."""
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for color, (label, energy) in zip(LINE_SERIES, curves.items()):
+        ax.plot(np.arange(len(energy)), energy, color=color, linewidth=2, label=label)
+    for label, value in references.items():
+        ax.axhline(value, color=INK_MUTED, linestyle="--", linewidth=1)
+        ax.text(ax.get_xlim()[1], value, f"{label}  ", ha="right", va="bottom", fontsize=8,
+                color=INK_SECONDARY)
+    ax.set(xlabel="Neuronas que cambiaron de estado", ylabel="Energía", title=title)
+    ax.legend(loc="upper right")
     fig.tight_layout()
     return fig
