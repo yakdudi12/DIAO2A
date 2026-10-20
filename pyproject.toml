@@ -16,6 +16,7 @@ dependencies = [
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
     "tqdm>=4.67.1",
+    "zxing-cpp>=3.1.1",
 ]
 
 [dependency-groups]
