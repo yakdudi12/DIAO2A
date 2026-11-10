@@ -1,7 +1,7 @@
-"""Experimentos del TP5 (llamados desde los notebooks y desde figuras_presentacion.py).
+"""Experimentos del TP5 (llamados desde los notebooks).
 
 Todo está parametrizado por ``config.json`` (semillas, épocas, grillas) para que cada número
-de la presentación pueda regenerarse.
+de los notebooks pueda regenerarse.
 """
 from __future__ import annotations
 

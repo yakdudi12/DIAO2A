@@ -1,4 +1,4 @@
-"""Funciones de gráfico compartidas por los notebooks y por figuras_presentacion.py.
+"""Funciones de gráfico compartidas por los notebooks.
 
 Criterio visual (Knaflic, *Storytelling with Data*): azul ITBA = lo que hay que mirar,
 gris = contexto, rojo sólo para el riesgo/falla. Escalas fijas al comparar.

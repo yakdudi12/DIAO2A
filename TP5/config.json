@@ -1,5 +1,5 @@
 {
-  "descripcion": "Semillas e hiperparametros usados en ejercicio1.ipynb, ejercicio2.ipynb, correr_todo.py, correr_ej2.py y presentacion/figuras_presentacion.py (TP5, DIAO2A). Redes propias en numpy (repo/TP5/deep.py).",
+  "descripcion": "Semillas e hiperparametros usados en ejercicio1.ipynb, ejercicio2.ipynb, correr_todo.py y correr_ej2.py (TP5, DIAO2A). Redes propias en numpy (repo/TP5/deep.py).",
   "datos": {
     "font": "data/font.h",
     "simbolos": "datos.generar_simbolos (DejaVu, 8 estilos, 39 simbolos, 16x16, desplazamientos -1/0/1)"
