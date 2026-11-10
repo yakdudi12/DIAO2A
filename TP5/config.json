@@ -1,0 +1,131 @@
+{
+  "descripcion": "Semillas e hiperparametros usados en ejercicio1.ipynb, ejercicio2.ipynb, correr_todo.py, correr_ej2.py y presentacion/figuras_presentacion.py (TP5, DIAO2A). Redes propias en numpy (repo/TP5/deep.py).",
+  "datos": {
+    "font": "data/font.h",
+    "simbolos": "datos.generar_simbolos (DejaVu, 8 estilos, 39 simbolos, 16x16, desplazamientos -1/0/1)"
+  },
+  "ej1a": {
+    "arquitecturas": [
+      [
+        16
+      ],
+      [
+        32,
+        16
+      ],
+      [
+        64,
+        32
+      ]
+    ],
+    "activaciones": [
+      "tanh",
+      "relu"
+    ],
+    "optimizadores": {
+      "sgd": 0.03,
+      "momentum": 0.005,
+      "adam": 0.005
+    },
+    "epocas": 3000,
+    "semillas": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "final": {
+      "enc_hidden": [
+        32,
+        16
+      ],
+      "latente": 2,
+      "act": "tanh",
+      "opt": "adam",
+      "lr": 0.005,
+      "epocas": 6000,
+      "semilla": 0
+    }
+  },
+  "ej1b": {
+    "arquitectura": [
+      32,
+      16
+    ],
+    "activacion": "tanh",
+    "lr": 0.005,
+    "epocas": 4000,
+    "latentes": [
+      2,
+      8
+    ],
+    "ruido_entrenamiento": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "ruido_test": [
+      0.0,
+      0.025,
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.3
+    ],
+    "repeticiones_test": 20,
+    "semillas": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "ej2": {
+    "hidden": [
+      128,
+      64
+    ],
+    "activacion": "tanh",
+    "latente": 2,
+    "lr": 0.002,
+    "batch": 128,
+    "epocas": 150,
+    "log_every": 15,
+    "betas": [
+      0.0,
+      0.25,
+      1.0,
+      4.0
+    ],
+    "semillas": [
+      0,
+      1,
+      2
+    ],
+    "estilos_test": [
+      3,
+      6
+    ],
+    "semilla_final": 0,
+    "beta_final": 1.0,
+    "latentes_barrido": [
+      2,
+      8,
+      16
+    ],
+    "latente_generacion": 16,
+    "juez": {
+      "modelo": "MLP 256-128-39 relu/softmax, Adam lr 2e-3, 30 epocas, semilla 0",
+      "metricas": [
+        "distancia de Frechet en rasgos de la capa oculta",
+        "distancia al vecino mas cercano",
+        "confianza >= 0.9 (solo diagnostico, no es metrica de calidad)"
+      ]
+    }
+  },
+  "semilla_global": 0
+}
