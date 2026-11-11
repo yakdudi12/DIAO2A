@@ -10,8 +10,9 @@ from pathlib import Path
 
 import numpy as np
 
-from datos import (SIMBOLOS, cargar_font3, generar_simbolos, ruido_sal_pimienta)
-from deep import Autoencoder, VAE, pixel_errors
+from datos import (SIMBOLOS, cargar_font3, cargar_pokemon, espejar, generar_simbolos,
+                   ruido_sal_pimienta)
+from deep import Autoencoder, VAE, bce_from_logits, pixel_errors
 
 AQUI = Path(__file__).resolve().parent
 
@@ -188,3 +189,93 @@ def barrido_beta(D, cfg, latent=None, proba=None):
             filas.append(dict(latent=latent, beta=beta, seed=s, val_elbo=h[-1]["val_elbo"], rec=h[-1]["rec"], kl=h[-1]["kl"],
                               err_px_test=rec_te, **q, std_mu=float(mu.std())))
     return filas
+
+
+# --------------------------------------------------------------------------- Ej. 2 con Pokémon
+def datos_pokemon(cfg):
+    """Sprites a ``lado``x``lado`` RGB. Se retienen ``n_validacion`` Pokémon completos (nunca vistos, ni
+    espejados) para validar; el entrenamiento se duplica con el reflejo horizontal de cada sprite."""
+    c = cfg["ej2_pokemon"]
+    X, nombres = cargar_pokemon(c["lado"], margen=c["margen"])
+    perm = np.random.default_rng(c["semilla_particion"]).permutation(len(X))
+    te, tr = np.sort(perm[:c["n_validacion"]]), np.sort(perm[c["n_validacion"]:])
+    Xtr = np.concatenate([X[tr], espejar(X[tr], c["lado"])]) if c["espejar"] else X[tr]
+    return dict(X=X, nombres=nombres, tr=tr, te=te, Xtr=Xtr, Xte=X[te], lado=c["lado"],
+                shape=(c["lado"], c["lado"], 3))
+
+
+def entrenar_vae_pokemon(P, cfg, beta, seed, latent):
+    c = cfg["ej2_pokemon"]
+    v = VAE(P["Xtr"].shape[1], c["hidden"], latent, c["activacion"], beta=beta, seed=seed)
+    h = v.fit(P["Xtr"], epochs=c["epocas"], lr=c["lr"], batch=c["batch"], log_every=c["log_every"], Xval=P["Xte"])
+    return v, h
+
+
+def guardar_vae(v, hist, ruta):
+    np.savez_compressed(ruta, *[p.astype(np.float32) for p in v.params],
+                        hist=np.array([[r[k] for k in ("epoch", "loss", "rec", "kl", "val_elbo")] for r in hist]))
+
+
+def cargar_vae(ruta, d_in, hidden, latent, act, beta):
+    """Reconstruye un VAE guardado con ``guardar_vae`` (los parámetros se copian en el mismo orden)."""
+    v = VAE(d_in, hidden, latent, act, beta=beta, seed=0)
+    with np.load(ruta) as f:
+        for i, p in enumerate(v.params):
+            p[...] = f[f"arr_{i}"]
+        H = f["hist"]
+    return v, [dict(zip(("epoch", "loss", "rec", "kl", "val_elbo"), map(float, r))) for r in H]
+
+
+def vae_pokemon(P, cfg, beta, latent, carpeta, seed=None):
+    """Carga el modelo de ``carpeta`` si existe; si no, lo entrena y lo guarda."""
+    c = cfg["ej2_pokemon"]; seed = c["semilla_final"] if seed is None else seed
+    ruta = Path(carpeta) / f"ej2p_b{beta:g}_d{latent}_s{seed}.npz"
+    if ruta.exists():
+        return cargar_vae(ruta, P["Xtr"].shape[1], c["hidden"], latent, c["activacion"], beta)
+    v, h = entrenar_vae_pokemon(P, cfg, beta, seed, latent)
+    Path(carpeta).mkdir(exist_ok=True); guardar_vae(v, h, ruta)
+    return v, h
+
+
+def base_pca(X, k):
+    """Componentes principales con SVD de numpy: espacio de rasgos para comparar distribuciones de imágenes."""
+    m = X.mean(0)
+    _, _, Vt = np.linalg.svd(X - m, full_matrices=False)
+    return lambda Y: (Y - m) @ Vt[:k].T
+
+
+def calidad_pokemon(modelo, P, cfg, seed=0, rasgos=None):
+    """¿Las muestras del prior se parecen a Pokémon reales sin ser copias?
+
+    * fd / fd_ref: distancia de Fréchet en el espacio PCA del entrenamiento entre *n_val* muestras generadas y el
+      entrenamiento, frente a la de los *n_val* Pokémon reales de validación (mismo tamaño de muestra, mismo sesgo).
+      fd se promedia sobre 20 subconjuntos. fd ≈ fd_ref significa "tan parecidas al conjunto como un Pokémon nuevo".
+    * d_gen_med / d_real_med: distancia euclídea mediana al vecino de entrenamiento más cercano.
+    * frac_copia: fracción de muestras más cerca de un dato que la mitad de la distancia típica de un Pokémon real nuevo.
+    """
+    c = cfg["ej2_pokemon"]; rng = np.random.default_rng(seed)
+    rasgos = rasgos or base_pca(P["Xtr"], c["componentes_pca"])
+    G = modelo.decode(rng.standard_normal((c["muestras_calidad"], modelo.latent)))
+    Ftr, Fte, Fg = rasgos(P["Xtr"]), rasgos(P["Xte"]), rasgos(G)
+    n = len(Fte)
+    fd = [distancia_frechet(Fg[rng.choice(len(Fg), n, replace=False)], Ftr) for _ in range(20)]
+    d_gen, d_real = dist_vecino(G, P["Xtr"]), dist_vecino(P["Xte"], P["Xtr"])
+    return dict(fd=float(np.mean(fd)), fd_ref=distancia_frechet(Fte, Ftr),
+                d_gen_med=float(np.median(d_gen)), d_real_med=float(np.median(d_real)),
+                frac_copia=float((d_gen < 0.5 * np.median(d_real)).mean()))
+
+
+def fila_barrido_pokemon(P, cfg, beta, latent, seed, carpeta=None):
+    """Una celda del barrido β x latente x semilla (la llama correr_ej2_pokemon.py en paralelo)."""
+    if carpeta is not None:
+        v, h = vae_pokemon(P, cfg, beta, latent, carpeta, seed=seed)
+    else:
+        v, h = entrenar_vae_pokemon(P, cfg, beta, seed, latent)
+    mu, _ = v.encode(P["Xte"])
+    rec_te = float(bce_from_logits(v.dec.forward(mu), P["Xte"]).mean())
+    mae_te = float(np.abs(v.decode(mu) - P["Xte"]).mean())
+    q = calidad_pokemon(v, P, cfg, seed=seed)
+    mu_tr, lv_tr = v.encode(P["Xtr"])
+    kl = float((0.5 * (mu_tr ** 2 + np.exp(lv_tr) - lv_tr - 1).sum(1)).mean())
+    return dict(latent=latent, beta=beta, seed=seed, val_elbo=h[-1]["val_elbo"], kl=kl,
+                rec_val=rec_te, mae_val=mae_te, std_mu=float(mu_tr.std()), **q)
