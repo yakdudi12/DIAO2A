@@ -60,8 +60,8 @@ def grilla_decodificada(decode, shape, lim=2.5, n=12, ax=None, cmap="gray_r", ra
     """
     (x0, x1), (y0, y1) = rango if rango is not None else ((-lim, lim), (-lim, lim))
     xs, ys = np.linspace(x0, x1, n), np.linspace(y0, y1, n)
-    h, w = shape
-    mos = np.zeros((n * h, n * w))
+    h, w = shape[:2]
+    mos = np.zeros((n * h, n * w, *shape[2:]))                # shape (h, w, 3) -> mosaico RGB
     for i, zy in enumerate(ys[::-1]):
         P = decode(np.array([[zx, zy] for zx in xs]))
         for j in range(n):
@@ -77,3 +77,18 @@ def bandas(ax, x, M, color, label, lw=2, alpha=.2, ls="-"):
     m, s = M.mean(0), M.std(0)
     ax.plot(x, m, color=color, lw=lw, label=label, ls=ls)
     ax.fill_between(x, m - s, m + s, color=color, alpha=alpha)
+
+
+def miniaturas_latente(Z, imgs, shape, ax=None, zoom=0.9, n_max=None, seed=0):
+    """Dibuja cada imagen en la posición de su código latente 2-D (útil cuando no hay etiquetas)."""
+    from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+    ax = ax or plt.gca()
+    idx = np.arange(len(Z))
+    if n_max is not None and len(Z) > n_max:
+        idx = np.random.default_rng(seed).choice(len(Z), n_max, replace=False)
+    ax.scatter(Z[:, 0], Z[:, 1], s=2, c=GRIS, alpha=.4)
+    for i in idx:
+        ab = AnnotationBbox(OffsetImage(np.asarray(imgs[i]).reshape(shape), zoom=zoom), Z[i, :2], frameon=False)
+        ax.add_artist(ab)
+    ax.set_xlabel("$z_1$"); ax.set_ylabel("$z_2$"); ax.grid(alpha=.25)
+    return ax
