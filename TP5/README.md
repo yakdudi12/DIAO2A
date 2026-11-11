@@ -25,12 +25,23 @@ el kernel tiene que arrancar en `TP5/` (es lo que hace VS Code por defecto).
 | Notebook | Contenido |
 |---|---|
 | `ejercicio1.ipynb` | Autoencoder de las 32 letras de `font.h` y denoising autoencoder |
-| `ejercicio2.ipynb` | VAE sobre símbolos matemáticos |
-| `ejercicio2_propuesta_*.ipynb` | Propuestas alternativas de datos para el ejercicio 2 |
+| `ejercicio2_pokemon.ipynb` | VAE sobre los 809 sprites de `data/pokemon/` |
+| `implementations/ejercicio2.ipynb` | Implementación anterior del ejercicio 2: VAE sobre símbolos matemáticos |
 
 Todos los hiperparámetros y semillas están en `config.json`. Los barridos del ejercicio 1
 ya calculados están en `results/`. Si esos archivos existen, el notebook los lee y corre en
 unos 15 segundos. Si se borran, los recalcula (unas 130 redes, varios minutos).
+
+Los notebooks del ejercicio 2 también leen sus barridos de `results/`:
+
+- `ejercicio2_pokemon.ipynb` necesita `results/ej2p_barrido.json` y los modelos
+  `results/ej2p_*.npz`, que genera `python correr_ej2_pokemon.py 8` (24 redes en 8 procesos,
+  unos 25 minutos). Con esos archivos el notebook corre en unos 15 segundos. Sin el barrido
+  lo recalcula en serie, y sin los modelos los reentrena.
+- `implementations/ejercicio2.ipynb` necesita `results/ej2_beta_d{2,8,16}.json`, que se
+  generan con `python correr_ej2.py 2`, `8` y `16` desde `TP5/`. El notebook busca los
+  módulos y `results/` en `TP5/`, así que funciona con el kernel en `TP5/` o en
+  `TP5/implementations/`.
 
 ## Ejercicio 1a: autoencoder con latente de 2 dimensiones
 
@@ -166,25 +177,148 @@ Píxeles errados tras reconstruir (de 35), según el ruido de test:
 representar el conjunto, no generalizar. El criterio de "parece una letra" es subjetivo.
 Se evaluó un único tipo de ruido (inversión de píxeles).
 
+## Ejercicio 2: autoencoder variacional (VAE)
+
+**Objetivo del enunciado:** extender el autoencoder anterior a un VAE sobre un conjunto de
+datos nuevo, para resolver el problema de la representación en el espacio latente, y usarlo
+para generar una muestra que se pueda juzgar como parte del conjunto.
+
+**Modelo.** `deep.VAE` reusa las piezas del autoencoder del ejercicio 1 (capas `MLP`,
+retropropagación a mano, Adam y BCE desde logits). El codificador devuelve μ y log σ² en
+lugar de un punto. El código se muestrea con el truco de reparametrización,
+z = μ + σ·ε, y la pérdida es BCE + β·KL(q(z|x) ‖ N(0, I)). Con β = 1 es el ELBO exacto y con
+β = 0 es un autoencoder determinístico, que sirve de comparación directa con el ejercicio 1.
+Los gradientes se verifican con diferencias finitas (error relativo máximo 1,8·10⁻⁸).
+
+**Cómo se mide si una muestra "pertenece".** Se usa la distancia de Fréchet (la idea del
+FID) entre las muestras del prior y el conjunto real, comparada con un piso: la misma
+distancia para datos reales que el modelo no vio. Además se mide la fracción de muestras
+que son casi copias de un dato de entrenamiento.
+
+El ejercicio se resolvió con dos conjuntos de datos y el mismo modelo. La implementación
+anterior, con símbolos matemáticos, está en `implementations/`: ahí el VAE funciona bien. La
+actual, con Pokémon, muestra hasta dónde llega una MLP escrita en numpy.
+
+### Implementación anterior: símbolos matemáticos (`implementations/ejercicio2.ipynb`)
+
+**Datos.** 39 símbolos (+, ×, ≤, ∑, ∫, ∂, √, π…) × 8 tipografías DejaVu × 9 desplazamientos
+de ±1 píxel: 2808 imágenes de 16×16, generadas desde las fuentes que trae `matplotlib`. Se
+retienen dos tipografías completas como validación. Un clasificador propio (99,86 % de
+exactitud en tipografías no vistas) hace de juez, y la distancia de Fréchet se calcula sobre
+sus rasgos internos.
+
+**Modelo.** 256-128-64-d, tanh, Adam (lr = 0,002), lotes de 128, 150 épocas. Barrido de
+β ∈ {0; 0,25; 1; 4} y d ∈ {2; 8; 16}, con 3 semillas por combinación.
+
+| d | β | KL (nats) | Píxeles errados (de 256), tipografías no vistas | Fréchet del prior |
+|---|---|---|---|---|
+| 2 | 0 | 29,1 | 30,3 | 156,4 |
+| 2 | 1 | 5,6 | 29,3 | 33,6 |
+| 16 | 0 | 104,0 | 9,0 | 358,6 |
+| 16 | 0,25 | 28,1 | 9,2 | 14,3 |
+| 16 | 1 | 13,5 | 12,5 | 13,5 |
+| 16 | 4 | 3,7 | 28,0 | 40,1 |
+
+El piso de la distancia de Fréchet es 14,2.
+
+- **El KL vuelve muestreable el espacio latente.** Con d = 16, las muestras del VAE (β = 1)
+  quedan al nivel del piso. El autoencoder con la misma arquitectura queda unas 27 veces más
+  lejos.
+- **El costo es la reconstrucción:** 12,5 píxeles errados contra 9,0 del autoencoder.
+  β = 4 sobrerregulariza: reconstruye peor y genera peor.
+- **Generación.** De 1500 muestras del prior del VAE con d = 16, 382 son reconocidas por el
+  juez con confianza ≥ 0,9 y no son copias. Se muestran ocho, cada una junto a su vecino real
+  más cercano.
+- **La métrica importa.** La confianza del juez favorece al autoencoder (0,47 contra 0,27
+  de muestras reconocibles), porque premia imágenes sobreconfiadas. La distancia de Fréchet
+  contra un piso real es la que separa los modelos.
+
+### Sprites de Pokémon (`ejercicio2_pokemon.ipynb`)
+
+**Datos.** Los 809 sprites de `data/pokemon/` (generaciones 1 a 7). Cada uno se compone
+sobre fondo blanco, se recorta al Pokémon y se escala a 32×32 RGB (3072 valores). Se
+retienen 81 Pokémon completos como validación. Los 728 de entrenamiento se duplican con su
+reflejo horizontal. No hay clases ni juez: la distancia de Fréchet se calcula sobre las 20
+primeras componentes principales del entrenamiento (SVD de numpy).
+
+**Modelo.** 3072-512-256-d, ReLU, Adam (lr = 3·10⁻⁴), lotes de 64, 300 épocas. Con tanh las
+3072 entradas saturan la primera capa, y con β = 1 el modelo colapsaba: el KL caía a cero y
+el decodificador devolvía siempre la imagen media. Barrido de β ∈ {0; 0,25; 1; 4} y
+d ∈ {2; 32}, con 3 semillas por combinación.
+
+| d | β | KL (nats) | BCE de reconstrucción, Pokémon no vistos | Fréchet del prior | Casi copias |
+|---|---|---|---|---|---|
+| 2 | 0 | 14,8 | 896 | 102,5 | 2 % |
+| 2 | 1 | 6,4 | 895 | 52,6 | 8 % |
+| 32 | 0 | 298,7 | 802 | 19,1 | 0 % |
+| 32 | 0,25 | 74,9 | 818 | 14,5 | 0 % |
+| 32 | 1 | 37,1 | 815 | 6,8 | 1 % |
+| 32 | 4 | 11,0 | 835 | 7,4 | 9 % |
+
+La BCE va de 600 nats (reconstrucción perfecta) a 981 (predecir siempre la imagen media). El
+piso de la distancia de Fréchet es 4,1.
+
+- **El KL vuelve muestreable el espacio latente.** Con d = 32, el autoencoder (β = 0)
+  dispersa sus códigos (KL de 299 nats). Con z ~ N(0, I) su decodificador produce ruido de
+  colores, porque esa zona nunca la vio: es el problema de los huecos del ejercicio 1. El
+  VAE genera figuras centradas sobre fondo blanco, con Fréchet 6,8 frente al piso de 4,1.
+- **β = 1 es el equilibrio.** β = 4 tiene mejor ELBO de validación (849 contra 862 nats),
+  pero no mejora las muestras y multiplica por 9 las casi copias.
+- **d = 2 sirve para ver, no para dibujar.** El plano se ordena solo por color y silueta,
+  pero reconstruye cerca de la imagen media (≈ 895 nats). Dos números alcanzaban para las 32
+  letras del ejercicio 1, no para 728 Pokémon distintos.
+- **Generación.** De 2000 muestras del prior, 629 no son copias y tienen el área y el
+  contraste de un sprite real. Su distancia mediana al conjunto en el espacio PCA es la de un
+  Pokémon real no visto (4,56 contra 4,54). La muestra elegida es una criatura bípeda rojiza
+  cuyos vecinos más cercanos son Charmander, Dragonite y Charmeleon, y no es ninguno de ellos.
+- **Las interpolaciones no distinguen los modelos.** Entre dos códigos de entrenamiento el
+  autoencoder también interpola bien. La diferencia aparece al muestrear del prior.
+
+**Limitación principal.** Las muestras son borrosas y de colores apagados: se reconoce la
+silueta y la paleta, pero no ojos ni contornos. Es el límite de una MLP con verosimilitud
+factorizada por píxel y 728 ejemplos. Para mejorarlo haría falta una red convolucional.
+
+## Conclusiones del ejercicio 2
+
+1. El término KL resuelve el problema del ejercicio 1. En los dos conjuntos, el mismo modelo
+   sin KL genera imágenes inservibles desde N(0, I), y con KL genera muestras cercanas al piso
+   de datos reales: Fréchet 13,5 contra 14,2 en símbolos y 6,8 contra 4,1 en Pokémon.
+2. El precio es reconstruir algo peor. β = 1 es el mejor equilibrio en los dos casos.
+3. Con símbolos el VAE genera muestras nítidas que un clasificador independiente reconoce.
+   Con Pokémon genera criaturas plausibles pero borrosas: el límite ya no es el esquema
+   variacional sino la capacidad de una MLP frente a datos muy diversos y en color.
+4. Interpolar entre datos conocidos no prueba que un modelo sea generativo. Muestrear del
+   prior sí.
+
+**Limitaciones.** Hay 3 semillas por combinación y una sola partición de validación. En
+Pokémon, la distancia de Fréchet sobre 20 componentes principales es un sustituto grueso
+del FID, y el filtro que elige la muestra nueva es una heurística. Los dos conjuntos son de
+imágenes sintéticas o dibujadas, no manuscritas.
+
 ## Estructura
 
 ```text
 TP5/
 ├── ejercicio1.ipynb
-├── ejercicio2.ipynb
-├── ejercicio2_propuesta_*.ipynb   #Propuestas alternativas de datos para el ejercicio 2
+├── ejercicio2_pokemon.ipynb
 ├── deep.py                        #MLP, SGD/Momentum/Adam, Autoencoder y VAE en numpy
 ├── datos.py                       #Parser de font.h, dataset de símbolos y funciones de ruido
 ├── experimentos.py                #Entrenamiento y barridos (ejercicios 1 y 2)
 ├── graficos.py                    #Funciones de gráfico de los notebooks
-├── correr_ej2.py                  #Corre el barrido del ejercicio 2 para un tamaño de latente
+├── correr_ej2.py                  #Barrido del ejercicio 2 con símbolos para un tamaño de latente
+├── correr_ej2_pokemon.py          #Barrido β × latente del VAE de Pokémon, en paralelo
 ├── config.json                    #Hiperparámetros y semillas
 ├── SIATP5.pdf                     #Enunciado
+├── implementations/
+│   └── ejercicio2.ipynb           #Implementación anterior del ejercicio 2 (símbolos matemáticos)
 ├── data/
-│   └── font.h                     #32 caracteres de 7×5 (0x60 a 0x7f)
+│   ├── font.h                     #32 caracteres de 7×5 (0x60 a 0x7f)
+│   └── pokemon/                   #809 sprites de 120×120 (PNG y JPG)
 └── results/
     ├── ej1a_barrido.json          #Barrido de arquitectura y optimizador
-    └── ej1b_barrido.json          #Barrido del denoising autoencoder
+    ├── ej1b_barrido.json          #Barrido del denoising autoencoder
+    ├── ej2p_barrido.json          #Barrido β × latente del VAE de Pokémon
+    └── ej2p_b*_d*_s0.npz          #Modelos finales de Pokémon (β = 0 y 1, d = 2 y 32)
 ```
 
 ## Bibliografía
@@ -199,3 +333,10 @@ TP5/
   Networks 2.
 - Alain & Bengio (2014), *What regularized auto-encoders learn from the data-generating
   distribution*, JMLR 15.
+- Kingma & Welling (2014), *Auto-Encoding Variational Bayes*, ICLR.
+- Doersch (2016), *Tutorial on Variational Autoencoders*, arXiv:1606.05908.
+- Higgins et al. (2017), *β-VAE: Learning basic visual concepts with a constrained
+  variational framework*, ICLR.
+- Bowman et al. (2016), *Generating sentences from a continuous space*, CoNLL.
+- Heusel et al. (2017), *GANs trained by a two time-scale update rule converge to a local
+  Nash equilibrium*, NeurIPS.
