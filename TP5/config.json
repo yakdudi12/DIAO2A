@@ -127,5 +127,42 @@
       ]
     }
   },
+  "ej2_pokemon": {
+    "descripcion": "VAE sobre los sprites de data/pokemon (ejercicio2_pokemon.ipynb, correr_ej2_pokemon.py)",
+    "lado": 32,
+    "margen": 0.06,
+    "n_validacion": 81,
+    "semilla_particion": 0,
+    "espejar": true,
+    "hidden": [
+      512,
+      256
+    ],
+    "activacion": "relu",
+    "lr": 0.0003,
+    "batch": 64,
+    "epocas": 300,
+    "log_every": 10,
+    "betas": [
+      0.0,
+      0.25,
+      1.0,
+      4.0
+    ],
+    "latentes": [
+      2,
+      32
+    ],
+    "semillas": [
+      0,
+      1,
+      2
+    ],
+    "semilla_final": 0,
+    "beta_final": 1.0,
+    "latente_generacion": 32,
+    "componentes_pca": 20,
+    "muestras_calidad": 2000
+  },
   "semilla_global": 0
 }
