@@ -73,6 +73,43 @@ def _rasterizar(fuente, simbolo, lado=LADO, ocupacion=0.78):
     return np.asarray(lienzo, dtype=float) / 255.0
 
 
+def cargar_pokemon(lado=32, carpeta: Path | None = None, margen=0.06):
+    """Sprites de ``data/pokemon`` (120x120, PNG con transparencia o JPG con fondo blanco).
+
+    Cada imagen se compone sobre fondo blanco, se recorta a la caja del Pokémon (lo que no es blanco),
+    se centra en un cuadrado con un ``margen`` y se escala a ``lado``x``lado`` en RGB.
+    Así el tamaño del dibujo no depende de cuánto fondo traía el sprite original.
+    Devuelve X (N, lado*lado*3) en [0,1] (fila-mayor, canal al final) y los nombres.
+    """
+    from PIL import Image
+    carpeta = carpeta or AQUI / "data" / "pokemon"
+    X, nombres = [], []
+    for p in sorted(carpeta.iterdir()):
+        if p.suffix.lower() not in (".png", ".jpg", ".jpeg"):
+            continue
+        im = Image.open(p).convert("RGBA")
+        fondo = Image.new("RGBA", im.size, (255, 255, 255, 255))
+        rgb = np.asarray(Image.alpha_composite(fondo, im).convert("RGB"), dtype=float) / 255.0
+        ys, xs = np.where((rgb < 0.95).any(2))          # píxeles que no son fondo
+        if len(ys) == 0:
+            continue
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        g = rgb[y0:y1, x0:x1]
+        m = int(round(max(g.shape[:2]) * (1 + 2 * margen)))
+        lienzo = np.ones((m, m, 3))
+        oy, ox = (m - g.shape[0]) // 2, (m - g.shape[1]) // 2
+        lienzo[oy:oy + g.shape[0], ox:ox + g.shape[1]] = g
+        img = Image.fromarray((lienzo * 255).round().astype(np.uint8)).resize((lado, lado), Image.LANCZOS)
+        X.append(np.asarray(img, dtype=float).ravel() / 255.0)
+        nombres.append(p.stem)
+    return np.array(X), nombres
+
+
+def espejar(X, lado):
+    """Refleja horizontalmente imágenes RGB aplanadas (aumento de datos: un Pokémon espejado sigue siéndolo)."""
+    return X.reshape(-1, lado, lado, 3)[:, :, ::-1].reshape(len(X), -1)
+
+
 def generar_simbolos(lado=LADO, tam_letra=160, desplazamientos=(-1, 0, 1)):
     """Dataset: |SIMBOLOS| x |ESTILOS| x |desplazamientos|^2 imágenes en [0,1].
 
