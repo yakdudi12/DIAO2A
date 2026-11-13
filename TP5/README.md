@@ -26,6 +26,8 @@ el kernel tiene que arrancar en `TP5/` (es lo que hace VS Code por defecto).
 |---|---|
 | `ejercicio1.ipynb` | Autoencoder de las 32 letras de `font.h` y denoising autoencoder |
 | `ejercicio2_pokemon.ipynb` | VAE sobre los 809 sprites de `data/pokemon/` |
+| `ejercicio2b_pokemon_conv.ipynb` | Ejercicio 2b: el mismo VAE con capas convolucionales escritas a mano |
+| `ejercicio2c_pokemon_cerca_de_datos.ipynb` | Ejercicio 2c: un Pokémon nuevo más nítido, generando cerca de los datos con el modelo del 2b |
 | `implementations/ejercicio2.ipynb` | Implementación anterior del ejercicio 2: VAE sobre símbolos matemáticos |
 
 Todos los hiperparámetros y semillas están en `config.json`. Los barridos del ejercicio 1
@@ -295,18 +297,84 @@ Pokémon, la distancia de Fréchet sobre 20 componentes principales es un sustit
 del FID, y el filtro que elige la muestra nueva es una heurística. Los dos conjuntos son de
 imágenes sintéticas o dibujadas, no manuscritas.
 
+## Ejercicio 2b: VAE convolucional (`ejercicio2b_pokemon_conv.ipynb`)
+
+El ejercicio 2 dejó abierta una pregunta: las muestras de Pokémon salen moteadas y borrosas,
+¿por el esquema variacional o por la MLP? El 2b cambia una sola cosa: las capas densas del
+codificador y del decodificador pasan a ser convoluciones. La pérdida (BCE + β·KL), la
+reparametrización, Adam, los datos, la partición y las métricas son los del ejercicio 2, cuyo
+código no se modifica.
+
+**Implementación.** `deep_conv.py` contiene la convolución, la ampliación ×2, su
+retropropagación y el VAE, todo escrito a mano y sin diferenciación automática. El gradiente
+se verifica con diferencias finitas (error relativo máximo de 1e-8). El módulo de arreglos es
+`numpy` en CPU o `cupy` en GPU: `cupy` ofrece la misma interfaz de arreglos sobre CUDA, así
+que el código es el mismo y sólo cambia dónde se hacen las cuentas.
+
+**Corridas** (`correr_ej2b.py`, 4 h 17 min en una GPU T4 x2 de Kaggle; el notebook que se
+subió lo arma `armar_kaggle.py`):
+
+| Bloque | Red | Corridas |
+|---|---|---|
+| A, 32×32 | 3 convoluciones (32, 64, 128 canales), d = 32, 600 épocas | β ∈ {0; 1} × aumento sí/no × 3 semillas |
+| B, 64×64 | 4 convoluciones (64, 128, 256, 512 canales), d = 64, 3000 épocas | β = 1, 1 semilla |
+
+**Resultados a igual resolución** (32×32, β = 1, d = 32, medias de 3 semillas):
+
+| | MLP (ej. 2) | Convolucional (ej. 2b) |
+|---|---|---|
+| Distancia de Fréchet de las muestras (piso 4,1) | 6,8 | 5,2 |
+| BCE en Pokémon no vistos (nats) | 815 | 798 |
+| Parámetros | 3,44 M | 0,47 M |
+
+1. La convolución elimina el ruido de colores y acerca las muestras al conjunto, con 7 veces
+   menos parámetros. Parte del problema del ejercicio 2 era la MLP.
+2. La otra parte no se arregla con más cómputo. El modelo de 64×64 da figuras más limpias,
+   pero sin ojos ni contornos, y su validación deja de mejorar en la época 300 de 3000: con
+   728 Pokémon distintos y una verosimilitud por píxel, el modelo aprende forma y paleta.
+3. El punto de mejor validación no es el mejor generador: cortar ahí da Fréchet 8,4 contra
+   5,2 del modelo final.
+4. El aumento con corrimientos mejora la reconstrucción (798 → 736 nats) y no las muestras
+   (Fréchet 5,9).
+5. Las figuras más convincentes salen de decodificar el punto medio entre los códigos de dos
+   Pokémon vecinos en el espacio latente: 13 de 14 superan el umbral de copia.
+
+El notebook carga los resultados de `results/` (`ej2b_barrido.json` y `ej2b_L*.npz`) y corre
+en CPU en un par de minutos; no reentrena. Sin GPU, `correr_ej2b.py` funciona con `numpy`
+pero tarda unos 10 segundos por época a 32×32.
+
+## Ejercicio 2c: generar cerca de los datos (`ejercicio2c_pokemon_cerca_de_datos.ipynb`)
+
+El 2b mostró que el decodificador dibuja nítido cerca de los códigos que vio y borroso lejos,
+y que N(0, I) cae casi siempre lejos. El 2c usa el mismo modelo de 64×64, sin reentrenarlo, y
+cambia sólo qué punto se decodifica: una mezcla del código de un Pokémon (peso entre 0,5 y
+0,75) con los de sus 3 vecinos latentes. De 3000 mezclas, 2022 superan el umbral de copia
+del ejercicio 2; las 12 más nítidas tienen una nitidez de 0,20 (módulo medio del gradiente
+sobre la figura), contra 0,11 de las muestras del prior y 0,25 de los sprites reales. Varias
+tienen contorno, extremidades y ojos.
+
+Límites: cada figura es una base reconocible deformada hacia sus vecinos, no una especie
+inventada desde cero; más nitidez implica más parecido a la base; y las 12 mostradas salen de
+una búsqueda sobre 3000 candidatos, no son una muestra típica. El notebook corre en CPU en
+un par de minutos y necesita `deep_conv.py` y `results/ej2b_L64_b1_a4_s0_final.npz`.
+
 ## Estructura
 
 ```text
 TP5/
 ├── ejercicio1.ipynb
 ├── ejercicio2_pokemon.ipynb
+├── ejercicio2b_pokemon_conv.ipynb  #Ejercicio 2b: VAE convolucional
+├── ejercicio2c_pokemon_cerca_de_datos.ipynb  #Ejercicio 2c: generación cerca de los datos
 ├── deep.py                        #MLP, SGD/Momentum/Adam, Autoencoder y VAE en numpy
 ├── datos.py                       #Parser de font.h, dataset de símbolos y funciones de ruido
 ├── experimentos.py                #Entrenamiento y barridos (ejercicios 1 y 2)
 ├── graficos.py                    #Funciones de gráfico de los notebooks
 ├── correr_ej2.py                  #Barrido del ejercicio 2 con símbolos para un tamaño de latente
 ├── correr_ej2_pokemon.py          #Barrido β × latente del VAE de Pokémon, en paralelo
+├── deep_conv.py                   #Ejercicio 2b: convolución, retropropagación y VAE a mano (numpy o cupy)
+├── correr_ej2b.py                 #Ejercicio 2b: entrenamiento de las 13 redes (GPU)
+├── armar_kaggle.py                #Ejercicio 2b: arma el notebook que corre en Kaggle
 ├── config.json                    #Hiperparámetros y semillas
 ├── SIATP5.pdf                     #Enunciado
 ├── implementations/
@@ -318,7 +386,9 @@ TP5/
     ├── ej1a_barrido.json          #Barrido de arquitectura y optimizador
     ├── ej1b_barrido.json          #Barrido del denoising autoencoder
     ├── ej2p_barrido.json          #Barrido β × latente del VAE de Pokémon
-    └── ej2p_b*_d*_s0.npz          #Modelos finales de Pokémon (β = 0 y 1, d = 2 y 32)
+    ├── ej2p_b*_d*_s0.npz          #Modelos finales de Pokémon (β = 0 y 1, d = 2 y 32)
+    ├── ej2b_barrido.json          #Ejercicio 2b: métricas de las 13 redes
+    └── ej2b_L*_s0_*.npz           #Ejercicio 2b: modelos de la semilla 0 (final y mejor validación)
 ```
 
 ## Bibliografía
