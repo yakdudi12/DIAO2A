@@ -1,0 +1,53 @@
+{
+ "bloque_a": {
+  "lado": 32,
+  "canales": [
+   32,
+   64,
+   128
+  ],
+  "latente": 32,
+  "betas": [
+   0.0,
+   1.0
+  ],
+  "desplazar": [
+   0,
+   2
+  ],
+  "semillas": [
+   0,
+   1,
+   2
+  ],
+  "epocas": 600,
+  "lr": 0.001,
+  "tanda": 64,
+  "calentamiento": 50,
+  "log_every": 10
+ },
+ "bloque_b": {
+  "lado": 64,
+  "canales": [
+   64,
+   128,
+   256,
+   512
+  ],
+  "latente": 64,
+  "betas": [
+   1.0
+  ],
+  "desplazar": [
+   4
+  ],
+  "semillas": [
+   0
+  ],
+  "epocas": 3000,
+  "lr": 0.0005,
+  "tanda": 64,
+  "calentamiento": 100,
+  "log_every": 25
+ }
+}

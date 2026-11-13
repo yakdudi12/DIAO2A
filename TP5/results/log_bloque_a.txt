@@ -1,0 +1,16 @@
+GPU (cupy): True | chequeo de gradiente: 2.10e-08
+
+=== bloque_a: 32x32, entrenamiento (1456, 3072), validación (81, 3072)
+ej2b_L32_b0_a0_s0: 945 s | final: rec_val 850 kl 281.9 Fréchet 20.1 (piso 4.1) copias 0.000 | mejor val en época 50
+ej2b_L32_b0_a0_s1: 944 s | final: rec_val 839 kl 275.4 Fréchet 21.1 (piso 4.1) copias 0.000 | mejor val en época 50
+ej2b_L32_b0_a0_s2: 935 s | final: rec_val 854 kl 250.9 Fréchet 20.2 (piso 4.1) copias 0.000 | mejor val en época 50
+ej2b_L32_b1_a0_s0: 949 s | final: rec_val 796 kl 47.7 Fréchet 5.1 (piso 4.1) copias 0.011 | mejor val en época 80
+ej2b_L32_b1_a0_s1: 944 s | final: rec_val 794 kl 47.0 Fréchet 5.5 (piso 4.1) copias 0.011 | mejor val en época 90
+ej2b_L32_b1_a0_s2: 1001 s | final: rec_val 803 kl 46.9 Fréchet 4.9 (piso 4.1) copias 0.004 | mejor val en época 80
+ej2b_L32_b0_a2_s0: 980 s | final: rec_val 736 kl 240.0 Fréchet 20.6 (piso 4.1) copias 0.000 | mejor val en época 270
+ej2b_L32_b0_a2_s1: 964 s | final: rec_val 735 kl 239.3 Fréchet 21.2 (piso 4.1) copias 0.000 | mejor val en época 170
+ej2b_L32_b0_a2_s2: 934 s | final: rec_val 734 kl 215.5 Fréchet 27.2 (piso 4.1) copias 0.000 | mejor val en época 310
+ej2b_L32_b1_a2_s0: 1019 s | final: rec_val 735 kl 40.9 Fréchet 5.6 (piso 4.1) copias 0.016 | mejor val en época 350
+ej2b_L32_b1_a2_s1: 1148 s | final: rec_val 739 kl 42.8 Fréchet 6.1 (piso 4.1) copias 0.028 | mejor val en época 210
+ej2b_L32_b1_a2_s2: 1080 s | final: rec_val 735 kl 42.7 Fréchet 6.0 (piso 4.1) copias 0.017 | mejor val en época 340
+listo: 24 filas en 11845 s
