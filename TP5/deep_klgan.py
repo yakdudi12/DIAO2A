@@ -155,6 +155,47 @@ class Perceptual(nn.Module):
         return self.red(a, b)
 
 
+class VecinosLPIPS:
+    """Vecino más cercano por LPIPS (Zhang et al., 2018) dentro de un conjunto de referencia.
+
+    La distancia en píxeles la domina el fondo blanco y la mancha de color; LPIPS compara rasgos de AlexNet
+    (formas, bordes, texturas). Los rasgos normalizados de la referencia se calculan una vez y se guardan en la GPU.
+    """
+
+    def __init__(self, Xref, lado, lado_lpips=128, tanda=128):
+        import lpips
+        self.lp = lpips
+        self.m = lpips.LPIPS(net="alex", verbose=False).to(DISPOSITIVO).eval()
+        self.lado, self.lado_lpips, self.tanda = lado, lado_lpips, tanda
+        self.ref = self.rasgos(Xref)
+
+    @torch.no_grad()
+    def rasgos(self, X):
+        capas = None
+        for i in range(0, len(X), self.tanda):
+            x = 2 * a_tensor(X[i:i + self.tanda], self.lado) - 1
+            if self.lado != self.lado_lpips:
+                x = F.interpolate(x, size=self.lado_lpips, mode="bilinear", align_corners=False)
+            f = [self.lp.normalize_tensor(t).half() for t in self.m.net(self.m.scaling_layer(x))]
+            capas = [[t] for t in f] if capas is None else [c + [t] for c, t in zip(capas, f)]
+        return [torch.cat(c) for c in capas]
+
+    @torch.no_grad()
+    def vecino(self, X, tanda_ref=512):
+        """Para cada fila de X: (distancia LPIPS al vecino más cercano de la referencia, índice del vecino)."""
+        Q = self.rasgos(X)
+        dmin, imin = [], []
+        for i in range(len(X)):
+            d = torch.zeros(len(self.ref[0]), device=DISPOSITIVO)
+            for k, (q, r) in enumerate(zip(Q, self.ref)):
+                for s in range(0, len(r), tanda_ref):
+                    d[s:s + tanda_ref] += self.m.lins[k]((q[i:i + 1].float() - r[s:s + tanda_ref].float()) ** 2).mean((1, 2, 3))
+            v, j = d.min(0)
+            dmin.append(v.item())
+            imin.append(j.item())
+        return np.array(dmin), np.array(imin)
+
+
 def kl_normal(mu, lv):
     return 0.5 * (mu ** 2 + lv.exp() - lv - 1).sum(1)
 
