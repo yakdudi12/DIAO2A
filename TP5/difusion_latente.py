@@ -9,7 +9,8 @@ la red es una MLP con bloques residuales y codificación sinusoidal del paso, no
 El decodificador no se toca: las muestras de la difusión y las de la mezcla de gaussianas pasan por el mismo
 decodificador y se miden con las mismas métricas (Fréchet, casi copias, nitidez).
 
-Uso:  uv run --with torch --with lpips python difusion_latente.py [bloque]     (completo o arte128)
+Uso:  uv run --with torch --with lpips python difusion_latente.py [bloque] [pasos]
+      bloque: completo o arte128; pasos de entrenamiento del denoiser (por defecto 30 000)
 Lee results/klgan_<bloque>.pt; guarda results/difusion_<bloque>.json y .png.
 """
 import json
@@ -123,7 +124,8 @@ if __name__ == "__main__":
     mu, _ = vae.encode(P["Xtr"])
     m, s = mu.mean(0), mu.std(0) + 1e-6
     print(f"=== {nombre}: {len(mu)} códigos de dimensión {mu.shape[1]} | {DISPOSITIVO}", flush=True)
-    red, hist = entrenar_difusion((mu - m) / s)
+    pasos = int(sys.argv[2]) if len(sys.argv) > 2 else 30000
+    red, hist = entrenar_difusion((mu - m) / s, pasos=pasos, log_every=max(2000, pasos // 20))
     n = cfg["ej2_pokemon"]["muestras_calidad"]
     G = {"difusion": vae.decode(muestrear(red, n, mu.shape[1]) * s + m)}
     for k in (10, 20):
