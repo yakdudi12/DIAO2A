@@ -178,3 +178,4 @@ tmp/
 TP2/benchmark_cache/
 TP2/benchmark_results/
 !TP3/logs/*.log
+TP5/data/pokemon_arte/

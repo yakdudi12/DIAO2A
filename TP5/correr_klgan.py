@@ -2,13 +2,16 @@
 
 Uso:  uv run --with torch --with lpips python correr_klgan.py [bloque ...]     (por defecto, todos)
 
-Bloques (64x64, misma partición, arquitectura y métricas que el bloque B del ejercicio 2b):
+Bloques con los sprites de data/pokemon (64x64, misma partición, arquitectura y métricas que el bloque B):
   l1        L1 + 1e-6·KL                       (base)
   lpips     L1 + LPIPS + 1e-6·KL               (aporte de la pérdida perceptual)
   completo  L1 + LPIPS + PatchGAN + 1e-6·KL    (aporte del discriminador)
+Bloque con el arte oficial de PokeAPI (data/pokemon_arte, bajado con descargar_arte.py):
+  arte128   la variante completa a 128x128, frente + shiny de 1025 especies; la validación retiene
+            especies enteras (su frente y su shiny), así ninguna variante de un Pokémon de validación se entrena.
 
 Cada modelo genera de dos maneras: N(0, I) y una mezcla de k gaussianas ajustada a los μ de entrenamiento.
-Guarda en results/: klgan_<bloque>.pt, klgan_<bloque>.png (vista previa) y klgan_barrido.json (métricas).
+Guarda en results/: klgan_<bloque>.pt, klgan_<bloque>.png (vista previa) y klgan_barrido*.json (métricas).
 """
 import copy
 import json
@@ -18,8 +21,9 @@ from pathlib import Path
 
 import numpy as np
 
+from datos import cargar_pokemon, espejar
 from deep_klgan import DISPOSITIVO, KLVAE, ajustar_gmm, entrenar, evaluar, guardar, muestrear_gmm, Perceptual
-from experimentos import calidad_pokemon, cargar_config, datos_pokemon
+from experimentos import base_pca, calidad_pokemon, cargar_config, datos_pokemon
 
 AQUI = Path(__file__).resolve().parent
 OUT = AQUI / "results"
@@ -30,7 +34,19 @@ CONFIG = {
     "l1": dict(BASE, w_lpips=0.0, w_disc=0.0),
     "lpips": dict(BASE, w_lpips=1.0, w_disc=0.0),
     "completo": dict(BASE, w_lpips=1.0, w_disc=0.5),
+    "arte128": dict(BASE, datos="arte", lado=128, canales=[64, 128, 256, 512, 512], latente=128, epocas=400,
+                    inicio_disc=80, desplazar=8, n_val_especies=100, w_lpips=1.0, w_disc=0.5),
 }
+
+
+def datos_arte(cfg, lado, n_val, seed=0):
+    """Arte oficial (frente y shiny) a lado x lado. Validación: n_val especies enteras; entrenamiento con espejado."""
+    X, nombres = cargar_pokemon(lado, carpeta=AQUI / "data" / "pokemon_arte", margen=cfg["ej2_pokemon"]["margen"])
+    especie = np.array([int(n.split("_")[0]) for n in nombres])
+    val = np.random.default_rng(seed).permutation(np.unique(especie))[:n_val]
+    te = np.isin(especie, val)
+    return dict(X=X, nombres=nombres, Xtr=np.concatenate([X[~te], espejar(X[~te], lado)]), Xte=X[te], lado=lado,
+                shape=(lado, lado, 3))
 
 
 def nitidez(X, lado):
@@ -60,7 +76,10 @@ def vista_previa(P, vae, G_gmm, G_prior, ruta, n=10):
 
 def correr(nombre, filas, cfg):
     b = CONFIG[nombre]
-    P = datos_pokemon(cfg)
+    cfg = copy.deepcopy(cfg)
+    cfg["ej2_pokemon"]["lado"] = b["lado"]
+    P = datos_arte(cfg, b["lado"], b["n_val_especies"]) if b.get("datos") == "arte" else datos_pokemon(cfg)
+    rasgos = base_pca(P["Xtr"], cfg["ej2_pokemon"]["componentes_pca"])
     print(f"\n=== {nombre}: {P['Xtr'].shape} | {DISPOSITIVO}", flush=True)
     t = time.time()
     vae = KLVAE(b["lado"], b["canales"], b["latente"])
@@ -78,11 +97,11 @@ def correr(nombre, filas, cfg):
                 **{f"{k}_val": x for k, x in v.items()}, std_mu=float(mu.std()),
                 nitidez_real=float(np.median(nitidez(P["Xte"], vae.lado))),
                 nitidez_rec=float(np.median(nitidez(vae.reconstruct(P["Xte"]), vae.lado))),
-                prior=dict(**calidad_pokemon(vae, P, cfg, seed=b["seed"], G=G_prior),
+                prior=dict(**calidad_pokemon(vae, P, cfg, seed=b["seed"], rasgos=rasgos, G=G_prior),
                            nitidez=float(np.median(nitidez(G_prior, vae.lado)))))
     for k in b["k_gmm"]:
         G = vae.decode(muestrear_gmm(ajustar_gmm(mu, k, b["seed"]), len(G_prior), b["seed"]))
-        fila[f"gmm{k}"] = dict(**calidad_pokemon(vae, P, cfg, seed=b["seed"], G=G), nitidez=float(np.median(nitidez(G, vae.lado))))
+        fila[f"gmm{k}"] = dict(**calidad_pokemon(vae, P, cfg, seed=b["seed"], rasgos=rasgos, G=G), nitidez=float(np.median(nitidez(G, vae.lado))))
         if k == 10:
             vista_previa(P, vae, G, G_prior, OUT / f"klgan_{nombre}.png")
     filas.append(fila)
@@ -95,8 +114,7 @@ def correr(nombre, filas, cfg):
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     bloques = sys.argv[1:] or list(CONFIG)
-    cfg = copy.deepcopy(cargar_config())
-    cfg["ej2_pokemon"]["lado"] = BASE["lado"]
+    cfg = cargar_config()
     ruta = OUT / ("klgan_barrido.json" if len(bloques) == len(CONFIG) else f"klgan_barrido_{'_'.join(bloques)}.json")
     filas = []
     for nombre in bloques:
