@@ -244,7 +244,7 @@ def base_pca(X, k):
     return lambda Y: (Y - m) @ Vt[:k].T
 
 
-def calidad_pokemon(modelo, P, cfg, seed=0, rasgos=None):
+def calidad_pokemon(modelo, P, cfg, seed=0, rasgos=None, G=None):
     """¿Las muestras del prior se parecen a Pokémon reales sin ser copias?
 
     * fd / fd_ref: distancia de Fréchet en el espacio PCA del entrenamiento entre *n_val* muestras generadas y el
@@ -252,10 +252,13 @@ def calidad_pokemon(modelo, P, cfg, seed=0, rasgos=None):
       fd se promedia sobre 20 subconjuntos. fd ≈ fd_ref significa "tan parecidas al conjunto como un Pokémon nuevo".
     * d_gen_med / d_real_med: distancia euclídea mediana al vecino de entrenamiento más cercano.
     * frac_copia: fracción de muestras más cerca de un dato que la mitad de la distancia típica de un Pokémon real nuevo.
+
+    ``G``: muestras ya generadas (filas) en lugar de decodificar N(0, I), p. ej. desde un prior aprendido.
     """
     c = cfg["ej2_pokemon"]; rng = np.random.default_rng(seed)
     rasgos = rasgos or base_pca(P["Xtr"], c["componentes_pca"])
-    G = modelo.decode(rng.standard_normal((c["muestras_calidad"], modelo.latent)))
+    if G is None:
+        G = modelo.decode(rng.standard_normal((c["muestras_calidad"], modelo.latent)))
     Ftr, Fte, Fg = rasgos(P["Xtr"]), rasgos(P["Xte"]), rasgos(G)
     n = len(Fte)
     fd = [distancia_frechet(Fg[rng.choice(len(Fg), n, replace=False)], Ftr) for _ in range(20)]
