@@ -269,81 +269,34 @@
 % ====================================================================== 13
 \section{Ej. 2: VAE con Pok\'emon}
 
-\begin{frame}{Ej.\ 2: un conjunto nuevo y m\'as exigente, 809 sprites de Pok\'emon}
+\begin{frame}{Ej.\ 2: 809 sprites de Pok\'emon y la red del Ej.\ 1 a otra escala}
   \centering
-  \includegraphics[width=0.90\textwidth,height=0.34\textheight,keepaspectratio]{f_2_dataset.png}\\[0.2em]
+  \includegraphics[width=0.90\textwidth,height=0.25\textheight,keepaspectratio]{f_2_dataset.png}\\[0.1em]
   \begin{columns}[T,onlytextwidth]
     \column{0.49\textwidth}
       \footnotesize
-      \begin{block}{Por qu\'e este conjunto}
+      \begin{block}{Datos}
         \begin{itemize}
-          \item \textbf{Sin clases}: cada Pok\'emon aparece una vez; no hay prototipos que memorizar.
-          \item \textbf{En color}: 3 canales, el modelo tambi\'en aprende paletas.
-          \item Criterio claro de \'exito al generar: que no sea ninguno de los 809 y que igual parezca un Pok\'emon.
+          \item \textbf{Sin clases} y \textbf{en color}: cada Pok\'emon aparece una vez.
+          \item 32$\times$32 RGB (3072 valores), recortado a la figura.
+          \item \textbf{81 Pok\'emon retenidos} para validar; 728 de entrenamiento + su reflejo (1456).
         \end{itemize}
       \end{block}
     \column{0.48\textwidth}
       \footnotesize
-      \begin{block}{Preprocesamiento y partici\'on}
+      \begin{block}{Red}
         \begin{itemize}
-          \item Composici\'on sobre fondo blanco, recorte a la figura, centrado con 6\,\% de margen.
-          \item Escalado a 32$\times$32 RGB: 3072 valores en $[0,1]$.
-          \item \textbf{81 Pok\'emon completos (10\,\%) retenidos}; los 728 restantes se duplican con su reflejo horizontal (1456 im\'agenes).
+          \item 3072--512--256--$d$, sim\'etrica. \textbf{ReLU}: con 3072 entradas tanh satura.
+          \item Adam, $\eta=3\cdot10^{-4}$, lotes de 64, 300 \'epocas.
+          \item $d=2$ para \textbf{ver} el espacio; $d=32$ para \textbf{dibujar}.
         \end{itemize}
       \end{block}
   \end{columns}
-\end{frame}
-
-% ====================================================================== 14
-\begin{frame}{La red base es la del Ej.\ 1 a otra escala; cada decisi\'on se tom\'o midiendo}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.56\textwidth}
-      \footnotesize
-      \begin{block}{Arquitectura e hiperpar\'ametros}
-        \begin{itemize}
-          \item Codificador 3072--512--256--$d$; decodificador sim\'etrico con salida sigmoide.
-          \item \textbf{ReLU en lugar de tanh}: con 3072 entradas tanh satura (prueba preliminar: BCE de entrenamiento 888 vs.\ 701 nats).
-          \item Adam, $\eta=3\cdot10^{-4}$, lotes de 64, 300 \'epocas. Con $\eta=10^{-3}$ sobreajusta.
-          \item $d\in\{2,\,32\}$: con 2 el espacio se puede \textbf{ver}; con 32 se puede \textbf{dibujar}.
-        \end{itemize}
-      \end{block}
-    \column{0.41\textwidth}
-      \begin{block}{BCE con p\'ixeles continuos}
-        \footnotesize
-        Su m\'inimo no es 0 sino la entrop\'ia de los propios p\'ixeles: se compara contra un piso y un techo.
-      \end{block}
-      \vspace{0.15cm}
-      \bignum{600 -- 981}{nats por imagen: reconstrucci\'on perfecta vs.\ predecir siempre la imagen media (Pok\'emon no vistos)}
-  \end{columns}
-  \clave{El autoencoder del Ej.\ 1 no dice \textbf{d\'onde} quedan los c\'odigos: para generar no sabemos de qu\'e distribuci\'on sacar $z$. Eso es lo que resuelve el esquema variacional.}
+  \clave{El autoencoder no dice \textbf{d\'onde} quedan los c\'odigos: para generar, no sabemos de d\'onde sacar $z$.}
 \end{frame}
 
 % ====================================================================== 15
-\begin{frame}{VAE: el codificador devuelve una distribuci\'on y la p\'erdida suma un regularizador}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.56\textwidth}
-      \begin{block}{Modelo generativo e inferencia variacional}
-        \footnotesize
-        $z\sim p(z)=\mathcal{N}(0,I)$, \quad $x\mid z\sim p_\phi(x\mid z)$ (Bernoulli por p\'ixel).\\[0.2em]
-        $p(z\mid x)$ es intratable: se aproxima con $q_\theta(z\mid x)=\mathcal{N}\big(\mu_\theta(x),\mathrm{diag}\,\sigma^2_\theta(x)\big)$.
-      \end{block}
-      \footnotesize
-      \[ \log p(x)=\mathrm{KL}\big(q(z|x)\,\|\,p(z|x)\big)+\mathcal{L}\;\;\Rightarrow\;\;\mathcal{L}\le\log p(x) \]
-      \[ -\mathcal{L}=\underbrace{-\mathbb{E}_{q}\big[\log p_\phi(x|z)\big]}_{\text{reconstrucci\'on (BCE)}}+\underbrace{\mathrm{KL}\big(q_\theta(z|x)\,\|\,\mathcal{N}(0,I)\big)}_{\text{regularizador}} \]
-    \column{0.40\textwidth}
-      \footnotesize
-      \begin{block}{Qu\'e hace cada t\'ermino}
-        \textbf{Reconstrucci\'on}: cada $z$ muestreado debe decodificar en algo parecido a $x$.\\[0.3em]
-        \textbf{KL}: empuja cada $q(z|x)$ hacia el prior; los c\'odigos cubren $\mathcal{N}(0,I)$ sin huecos.
-      \end{block}
-      \begin{block}{Factor $\beta$ (Higgins et al., 2017)}
-        P\'erdida $=\mathrm{BCE}+\beta\cdot\mathrm{KL}$. $\beta=1$: cota variacional. $\beta=0$: sin regularizador, se comporta como el autoencoder del Ej.\ 1.
-      \end{block}
-  \end{columns}
-\end{frame}
-
-% ====================================================================== 16
-\begin{frame}{La reparametrizaci\'on permite retropropagar a trav\'es del muestreo}
+\begin{frame}{VAE: el codificador devuelve una distribuci\'on y el KL la acerca a $\mathcal{N}(0,I)$}
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
       \centering
@@ -362,41 +315,36 @@
         \draw[flecha] (mu)--(z); \draw[flecha] (lv)--(z); \draw[flecha,draw=itbaRed] (e)--(z);
         \draw[flecha] (z)--(d); \draw[flecha] (d)--(o);
       \end{tikzpicture}
-      \\[0.3em]\fuente{El azar entra por $\varepsilon$; $\mu$ y $\sigma$ quedan en un camino derivable.}
+      \\[0.3em]\fuente{Reparametrizaci\'on: el azar entra por $\varepsilon$, as\'i $\mu$ y $\sigma$ se pueden derivar.}
     \column{0.47\textwidth}
-      \scriptsize
-      \begin{block}{KL en forma cerrada (gaussianas diagonales)}
-        $\mathrm{KL}=\tfrac12\sum_{j=1}^{d}\big(\mu_j^2+\sigma_j^2-\log\sigma_j^2-1\big)$
-      \end{block}
-      \begin{block}{Gradientes que llegan al codificador}
-        $\partial\mathcal{L}/\partial\mu=\delta_z+\beta\mu$\\[0.3em]
-        $\partial\mathcal{L}/\partial\log\sigma^2=\tfrac12\,\delta_z\odot\varepsilon\odot\sigma+\tfrac{\beta}{2}(\sigma^2-1)$\\[0.3em]
-        $\delta_z$: error de reconstrucci\'on retropropagado por el decodificador.
-      \end{block}
+      \footnotesize
+      \[ \text{p\'erdida}=\underbrace{\mathrm{BCE}(x,\hat{x})}_{\text{reconstruir}}+\beta\,\underbrace{\mathrm{KL}\big(q(z|x)\,\|\,\mathcal{N}(0,I)\big)}_{\text{ordenar el espacio}} \]
+      \begin{itemize}
+        \item \textbf{Reconstruir}: el $z$ muestreado tiene que volver a dar $x$.
+        \item \textbf{KL}: junta los c\'odigos alrededor de $\mathcal{N}(0,I)$, sin huecos.
+        \item $\beta=0$: el autoencoder del Ej.\ 1. $\beta=1$: VAE (Kingma \& Welling, 2014).
+      \end{itemize}
   \end{columns}
-  \clave{El decodificador s\'olo recibe gradiente de reconstrucci\'on; el codificador, reconstrucci\'on m\'as KL. Verificado con diferencias finitas fijando $\varepsilon$.}
+  \clave{Si los c\'odigos llenan $\mathcal{N}(0,I)$, cualquier $z\sim\mathcal{N}(0,I)$ decodifica en algo v\'alido: eso es generar.}
 \end{frame}
 
 % ====================================================================== 17
-\begin{frame}{?`C\'omo medir que una muestra ``pertenece'' al conjunto si no hay etiquetas?}
+\begin{frame}{?`C\'omo medir que una muestra ``pertenece'' al conjunto?}
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
       \footnotesize
-      \begin{block}{Distancia de Fr\'echet entre distribuciones}
-        Se ajusta una gaussiana a cada nube de rasgos y se calcula
+      \begin{block}{Distancia de Fr\'echet (la idea del FID)}
+        Gaussiana ajustada a cada nube de rasgos (20 componentes principales):
         \[ \|m_1-m_2\|^2+\mathrm{tr}\big(S_1+S_2-2\,(S_1S_2)^{1/2}\big) \]
-        Es la idea del FID (Heusel et al., 2017). Rasgos: las 20 primeras componentes principales del entrenamiento (SVD de \texttt{numpy}).
       \end{block}
     \column{0.47\textwidth}
       \footnotesize
-      \begin{block}{Un piso para interpretarla}
-        La misma distancia para los \textbf{81 Pok\'emon reales no vistos}, con igual tama\~no de muestra: \textbf{4,1}. Si las muestras generadas se acercan al piso, se parecen al conjunto tanto como un Pok\'emon real nuevo.
-      \end{block}
-      \begin{block}{Fracci\'on de casi copias}
-        Muestras m\'as cerca de un dato de entrenamiento que la mitad de la distancia t\'ipica de un Pok\'emon nuevo. Una copia no es una muestra nueva.
+      \begin{block}{Referencias}
+        \textbf{Piso 4,1}: la misma distancia para 81 Pok\'emon reales no vistos.\\[0.3em]
+        \textbf{Casi copias}: muestras pegadas a un dato de entrenamiento.
       \end{block}
   \end{columns}
-  \clave{No se eval\'ua una imagen suelta sino la \textbf{distribuci\'on} de 2000 muestras de $z\sim\mathcal{N}(0,I)$, siempre contra una referencia de datos reales.}
+  \clave{Se eval\'ua la \textbf{distribuci\'on} de 2000 muestras de $\mathcal{N}(0,I)$ contra datos reales, no una imagen suelta.}
 \end{frame}
 
 % ====================================================================== 18
@@ -420,82 +368,139 @@
   \end{columns}
 \end{frame}
 
-% ====================================================================== 21
-\begin{frame}{Un Pok\'emon nuevo: no es copia y est\'a tan cerca del conjunto como uno real}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.52\textwidth}
-      \centering
-      \includegraphics[width=0.86\textwidth]{f_2_elegida.png}\\[0.2em]
-      \includegraphics[width=\textwidth]{f_2_nuevas.png}
-      \\\fuente{Arriba: muestra elegida y sus tres vecinos reales m\'as cercanos (espacio PCA). Abajo: 10 muestras filtradas y su vecino real.}
-    \column{0.45\textwidth}
-      \footnotesize
-      \begin{block}{Filtro sobre 2000 muestras del prior ($d$=32)}
-        (1) no son casi copias; (2) \'area y contraste de la figura entre los percentiles 10 y 90 de los sprites reales. Quedan \textbf{629}.
-      \end{block}
-      \begin{block}{Argumentos de pertenencia}
-        \begin{itemize}
-          \item En p\'ixeles: vecino a 6,1 (umbral de copia 4,9).
-          \item En PCA: vecino a 2,82 (Pok\'emon real no visto, mediana 4,54).
-          \item Las 629 filtradas: mediana 4,56 vs.\ 4,54 de los reales.
-        \end{itemize}
-      \end{block}
-      {\tiny El juicio final es humano: se reconoce por silueta y paleta, no por detalles.}
-  \end{columns}
-\end{frame}
-
 % ====================================================================== 21b
-\begin{frame}{Ej.\ 2b: con convoluciones escritas a mano desaparece el ruido de colores}
+\begin{frame}{Ej.\ 2b: con convoluciones desaparece el ruido de colores}
   \centering
-  \includegraphics[width=0.88\textwidth,height=0.50\textheight,keepaspectratio]{f_2b_muestras.png}\\[0.1em]
+  \includegraphics[width=0.90\textwidth,height=0.52\textheight,keepaspectratio]{f_2b_muestras.png}\\[0.2em]
   \begin{columns}[T,onlytextwidth]
-    \column{0.23\textwidth}\bignum{5,2}{Fr\'echet, VAE conv. \\ (MLP 6,8; piso 4,1)}
-    \column{0.23\textwidth}\bignum{798}{nats en no vistos \\ (MLP 815)}
-    \column{0.50\textwidth}\scriptsize\vspace{0.05cm}Mismos datos, p\'erdida, latente y m\'etricas; s\'olo cambian las capas densas por \textbf{convoluciones}, con 7 veces menos par\'ametros. La retropropagaci\'on est\'a escrita a mano (error de gradiente $10^{-8}$); \texttt{cupy} hace las cuentas de arreglos en GPU con la interfaz de \texttt{numpy}. A 64$\times$64 (4 h de GPU) las figuras son m\'as limpias, pero \textbf{siguen sin ojos ni contornos}.
+    \column{0.25\textwidth}\bignum{5,2}{Fr\'echet convolucional \\ (MLP 6,8; piso 4,1)}
+    \column{0.25\textwidth}\bignum{7$\times$}{menos par\'ametros \\ que la MLP}
+    \column{0.44\textwidth}\footnotesize\vspace{0.05cm}Mismo VAE; s\'olo las capas densas pasan a ser \textbf{convoluciones}, tambi\'en escritas a mano. Las figuras salen m\'as limpias, pero \textbf{siguen sin ojos ni contornos}.
   \end{columns}
 \end{frame}
 
 % ====================================================================== 21c
-\begin{frame}{Ej.\ 2b: la figura m\'as convincente es el punto medio entre dos Pok\'emon vecinos}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.60\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{f_2b_fusiones.png}
-      \\\fuente{Modelo convolucional de 64$\times$64. $z=\tfrac12(\mu_A+\mu_B)$; B es el vecino m\'as cercano de A en el espacio latente y C un Pok\'emon al azar.}
-    \column{0.37\textwidth}
-      \footnotesize
-      \begin{block}{Qu\'e muestra}
-        \begin{itemize}
-          \item \textbf{A+B (vecinos):} criaturas con cuerpo, patas y paleta coherente. 13 de 14 superan el umbral de copia.
-          \item \textbf{A+C (al azar):} vuelven a ser manchas.
-          \item \textbf{A + ruido del posterior:} casi una copia de A (1 de 14 supera el umbral).
-        \end{itemize}
-      \end{block}
-      \begin{block}{Lectura}
-        El decodificador dibuja bien cerca de los c\'odigos que vio. M\'as c\'omputo no agrega detalle: con 728 Pok\'emon distintos el l\'imite son los datos y la verosimilitud por p\'ixel.
-      \end{block}
-  \end{columns}
+\begin{frame}{Ej.\ 2b--2c: cerca de los datos, el decodificador dibuja Pok\'emon nuevos}
+  \centering
+  \includegraphics[width=\textwidth,height=0.45\textheight,keepaspectratio]{f_2b_fusiones.png}\\[-0.1em]
+  \fuente{Punto medio entre un Pok\'emon y su vecino latente (A+B) contra uno al azar (A+C): entre vecinos aparecen cuerpo y patas; al azar, manchas.}\\[0.3em]
+  \includegraphics[width=\textwidth,height=0.30\textheight,keepaspectratio]{f_2c_candidatos.png}\\[-0.1em]
+  \fuente{Mezcla de un Pok\'emon con sus 3 vecinos latentes: aparecen contorno y ojos; 2022 de 3000 mezclas no son copias.}
 \end{frame}
 
-% ====================================================================== 21d
-\begin{frame}{Ej.\ 2c: cerca de los datos sale un Pok\'emon nuevo con contorno y ojos}
-  \centering
-  \includegraphics[width=0.90\textwidth,height=0.40\textheight,keepaspectratio]{f_2c_candidatos.png}\\[0.1em]
+% ====================================================================== 21e
+\section{Ej. 2 extendido: nitidez}
+
+\begin{frame}{Lo que intentamos sin cambiar la p\'erdida no alcanz\'o}
+  \footnotesize
+  Las muestras del Ej.\ 2b son \textbf{borrosas} (la p\'erdida por p\'ixel premia el promedio) y \textbf{fragmentadas} ($\mathcal{N}(0,I)$ cae fuera de los c\'odigos).
+  \vspace{0.1cm}
   \begin{columns}[T,onlytextwidth]
-    \column{0.47\textwidth}
-      \centering
-      \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{f_2c_elegida.png}
-      \\\fuente{Elegida a ojo entre las 12 m\'as n\'itidas; entre par\'entesis, el peso de cada Pok\'emon en la mezcla.}
-    \column{0.50\textwidth}
-      \scriptsize
-      Modelo del Ej.\ 2b sin reentrenar: $z=w_A\mu_A+\sum_j w_j\mu_{B_j}$, con $A$ un Pok\'emon y $B_j$ sus 3 vecinos latentes.
-      \begin{itemize}
-        \item \textbf{2022 de 3000} mezclas no son copias (mismo umbral del Ej.\ 2).
-        \item Nitidez de las 12 elegidas: \textbf{0,20}, contra 0,11 del prior y 0,25 de un sprite real.
-        \item La elegida est\'a a 13,4 del dato m\'as cercano (umbral 11,1).
-      \end{itemize}
-      \textbf{L\'imite:} es una base deformada hacia sus vecinos, no una especie inventada desde cero.
+    \column{0.49\textwidth}
+      \begin{block}{1. Forzar bordes (VAE a mano, 32$\times$32)}
+        \scriptsize
+        Canal alfa + p\'erdida de bordes $\lambda\sum|\nabla\hat{x}-\nabla x|$. Fr\'echet, 3 semillas (piso 4,1):\\[0.3em]
+        \centering\setlength{\tabcolsep}{3pt}
+        \begin{tabular}{cccccc}
+          \toprule
+          sin alfa & $\lambda$=0 & 0,1 & 0,3 & 1 \\
+          \midrule
+          \textbf{5,2} & 5,7 & 6,5 & 7,0 & 7,6 \\
+          \bottomrule
+        \end{tabular}\\[0.2em]
+        \raggedright M\'as peso a los bordes, peor.
+      \end{block}
+    \column{0.49\textwidth}
+      \begin{block}{2. Muestrear mejor (64$\times$64)}
+        \scriptsize
+        Gaussianas sobre los c\'odigos $\mu$ en vez de $\mathcal{N}(0,I)$:\\[0.3em]
+        \centering\setlength{\tabcolsep}{3pt}
+        \begin{tabular}{lcc}
+          \toprule
+          Muestreo & Fr\'echet (16,6) & Nitidez \\
+          \midrule
+          $\mathcal{N}(0,I)$ & 28,5 & 0,108 \\
+          Temperatura 0,6 & 44,6 & 0,082 \\
+          20 gaussianas & \textbf{15,9} & 0,103 \\
+          \bottomrule
+        \end{tabular}\\[0.2em]
+        \raggedright Llega al piso; la nitidez no cambia (real 0,252).
+      \end{block}
   \end{columns}
+  \clave{Ni forzar bordes ni muestrear mejor arreglan el borroneo: est\'a en la \textbf{p\'erdida por p\'ixel}.}
+\end{frame}
+
+% ====================================================================== 21f
+\begin{frame}{[Extra] Nueva p\'erdida y m\'as datos: KL-VAE con LPIPS y PatchGAN}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.54\textwidth}
+      \begin{block}{P\'erdida del autoencoder de Latent Diffusion}
+        \scriptsize
+        {\centering $\mathcal{L}=\sum\big(|x-\hat{x}|+\mathrm{LPIPS}\big)+10^{-6}\,\mathrm{KL}+\lambda\,\mathcal{L}_G$\par}
+        \vspace{0.2em}
+        LPIPS: distancia perceptual con AlexNet (Zhang et al., 2018). $\mathcal{L}_G$: PatchGAN desde la \'epoca 80 (Esser et al., 2021; Rombach et al., 2022).
+      \end{block}
+      \begin{block}{Datos: arte oficial de PokeAPI}
+        \scriptsize
+        1025 especies $\times$ (frente + shiny), a 128$\times$128. Validaci\'on: \textbf{100 especies enteras}, sin fuga. 3700 im\'agenes de entrenamiento con espejado; 400 \'epocas, $\sim$1 h en una RTX 3090.\\[0.2em]
+        {\color{softGray}Primero se probaron por separado; despu\'es se fusionaron. Usa PyTorch.}
+      \end{block}
+    \column{0.42\textwidth}
+      \centering
+      \scriptsize\setlength{\tabcolsep}{4pt}
+      \begin{tabular}{lc}
+        \toprule
+        \multicolumn{2}{l}{\textbf{Por separado} (sprites 64$\times$64)} \\
+        \midrule
+        Nitidez rec., s\'olo L1 & 0,10 \\
+        \quad + LPIPS & 0,16 \\
+        \quad + PatchGAN (reales 0,25) & \textbf{0,25} \\
+        \midrule
+        \multicolumn{2}{l}{\textbf{Fusi\'on: especies no vistas}} \\
+        \midrule
+        LPIPS (0 = id\'entica) & 0,250 \\
+        Nitidez (reales 0,167) & 0,187 \\
+        \midrule
+        \multicolumn{2}{l}{\textbf{Fusi\'on: generaci\'on} (10 gaussianas)} \\
+        \midrule
+        LPIPS al vecino (real nueva 0,364) & 0,349 \\
+        Casi copias (LPIPS) & 0\,\% \\
+        \bottomrule
+      \end{tabular}
+  \end{columns}
+  \clave{La nueva p\'erdida lleva la nitidez al nivel real; m\'as datos y resoluci\'on reconstruyen especies no vistas.}
+\end{frame}
+
+% ====================================================================== 21h
+\begin{frame}{C\'omo aprende: borroso, sacud\'on del discriminador y recuperaci\'on}
+  \centering
+  \includegraphics[width=0.97\textwidth,height=0.66\textheight,keepaspectratio]{f_2e_evolucion.png}\\[-0.1em]
+  \fuente{Mismas especies de validaci\'on en cada \'epoca. Hasta la 75, s\'olo L1 + LPIPS: siluetas borrosas (L1 de validaci\'on 3883, LPIPS 0,248). En la 100, con el discriminador reci\'en encendido, todo se ti\~ne de naranja (5036; 0,286). Desde la 200 vuelven los colores propios y los contornos (\'epoca 400: 4152; 0,250). La validaci\'on se estanca y el discriminador va ganando (p\'erdida 0,54 $\to$ 0,34): m\'as \'epocas aportar\'ian poco.}
+\end{frame}
+
+% ====================================================================== 21i
+\begin{frame}{El espacio latente es continuo entre c\'odigos, pero $\mathcal{N}(0,I)$ cae fuera de ellos}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.72\textwidth}
+      \centering
+      \includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{f_2e_interpolacion.png}
+      \\\fuente{Decodificaci\'on de $(1-t)\,\mu_A+t\,\mu_B$ entre pares de especies de validaci\'on.}
+    \column{0.26\textwidth}
+      \scriptsize
+      \begin{block}{Transiciones graduales}
+        Vulpix $\to$ Paras, Weepinbell $\to$ Geodude: el camino entre dos c\'odigos decodifica sin im\'agenes rotas (a mitad de camino, superposiciones).
+      \end{block}
+      Fr\'echet (piso 56,0): desde $\mathcal{N}(0,I)$ {\color{itbaRed}\textbf{535,6}}; desde gaussianas sobre los $\mu$, \textbf{32,7}.
+  \end{columns}
+  \clave{Interpola bien y aun as\'i no genera desde $\mathcal{N}(0,I)$: interpolar no prueba que un modelo sea generativo.}
+\end{frame}
+
+% ====================================================================== 21j
+\begin{frame}{Generar desde los c\'odigos: con m\'as componentes, ``primos'' de un Pok\'emon real}
+  \centering
+  \includegraphics[width=\textwidth,height=0.53\textheight,keepaspectratio]{f_2e_gmm_k100.png}\\[0.2em]
+  {\scriptsize Con $k$=100 cada componente cubre $\sim$37 Pok\'emon parecidos (con $k$=10, $\sim$370): muestrear combina vecinos. Las muestras se acercan a una especie real sin copiarla (Sandshrew, Psyduck, Jellicent). 500 muestras por fila; vecino por LPIPS.}
+  \clave{\scriptsize Subir $k$ acerca las muestras a un Pok\'emon real sin caer en copias.}
 \end{frame}
 
 % ====================================================================== 22
@@ -507,9 +512,8 @@
     \item \textbf{Dos n\'umeros alcanzan para 32 letras, pero hay que encontrarlos}: dos capas ocultas y Adam lo logran en 5/5 semillas (0 px); PCA con 2 componentes deja hasta 15 px.
     \item \textbf{El DAE s\'olo limpia si se entrena con ruido}: un AE sin ruido empeora la entrada; con $d$=8 y $p_{train}$=0,1 deja 0,44 px donde hab\'ia 3,5 (87\,\% menos).
     \item \textbf{El espacio latente de un autoencoder tiene huecos}: reconstruye e interpola entre c\'odigos conocidos, pero no se puede muestrear.
-    \item \textbf{El t\'ermino KL es lo que lo vuelve muestreable}: misma red y mismos datos, Fr\'echet 6,8 $\pm$ 0,6 (VAE) contra 19,1 (AE), con piso 4,1. El precio: 815 contra 802 nats de reconstrucci\'on. $\beta$=1 es el equilibrio.
-    \item \textbf{Interpolar no prueba que un modelo sea generativo; muestrear del prior s\'i}: entre dos c\'odigos de entrenamiento el AE tambi\'en interpola bien.
-    \item \textbf{Parte de la borrosidad era de la MLP, no del VAE} (Ej.\ 2b): con convoluciones el Fr\'echet baja de 6,8 a 5,2 y desaparece el moteado; el detalle fino no aparece muestreando del prior ni con 4 h de GPU, pero s\'i generando cerca de los datos (Ej.\ 2c).
+    \item \textbf{Interpolar no prueba que un modelo sea generativo.}
+    \item \textbf{Se necesitar\'ian m\'as datos y con mayor variedad entre ellos}: con una imagen por especie, los modelos aprenden silueta, paleta y estilo, pero no anatom\'ia coherente.
   \end{enumerate}
   \vspace{0.15cm}
   \begin{block}{Relaci\'on entre los ejercicios}
@@ -519,28 +523,24 @@
 \end{frame}
 
 % ====================================================================== 23
-\begin{frame}{Limitaciones, pr\'oximos pasos y reproducibilidad}
+\begin{frame}{Pr\'oximos pasos y reproducibilidad}
   \footnotesize
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
-      \begin{block}{Limitaciones}
+      \begin{block}{Pr\'oximos pasos}
         \begin{itemize}
-          \item Ej.\ 1: s\'olo 32 patrones, sin validaci\'on (el enunciado pide representar el conjunto); un \'unico tipo de ruido.
-          \item Ej.\ 2 y 2b: muestras \textbf{sin detalle fino} (verosimilitud factorizada por p\'ixel; 728 Pok\'emon, uno de cada uno). El modelo de 64$\times$64 tiene una sola semilla.
-          \item Fr\'echet sobre 20 componentes principales: sustituto grueso del FID. El filtro de selecci\'on es una heur\'istica.
-          \item 3 semillas por celda y una sola partici\'on de validaci\'on.
+          \item \textbf{M\'as datos}: m\'as im\'agenes por especie y m\'as variedad entre ellas.
+          \item \textbf{Aumento de datos}: color, escala, recortes, tambi\'en antes del discriminador (DiffAugment; Zhao et al., 2020).
+          \item \textbf{Nuevas arquitecturas}, como modelos de difusi\'on sobre el espacio latente: nuestra prueba fue preliminar y no alcanza para descartarlos.
         \end{itemize}
       \end{block}
     \column{0.46\textwidth}
-      \begin{block}{Pr\'oximos pasos}
-        M\'as sprites por Pok\'emon; p\'erdida perceptual o adversaria.
-      \end{block}
       \begin{block}{Reproducibilidad}
         \texttt{github.com/yakdudi12/DIAO2A} (carpeta \texttt{TP5}): notebooks, m\'odulos, \texttt{README.md} y \texttt{config.json}. Semillas: 0--4 (Ej.\ 1), 0--2 (Ej.\ 2); modelos finales con semilla 0.
       \end{block}
   \end{columns}
   \vspace{0.25cm}
-  \centering\fuente{Bibliograf\'ia: apunte de la c\'atedra (\emph{Artificializando}, cap.\ 18); Goodfellow et al.\ (2016), cap.\ 14; Aggarwal (2023), \S3.4 y \S5.10; Vincent et al.\ (2008); Kingma \& Welling (2014, 2019); Doersch (2016); Higgins et al.\ (2017); Heusel et al.\ (2017).}
+  \centering\fuente{Bibliograf\'ia: apunte de la c\'atedra (\emph{Artificializando}, cap.\ 18); Goodfellow et al.\ (2016), cap.\ 14; Aggarwal (2023), \S3.4 y \S5.10; Vincent et al.\ (2008); Kingma \& Welling (2014, 2019); Doersch (2016); Higgins et al.\ (2017); Heusel et al.\ (2017); Mathieu et al.\ (2016); Zhang et al.\ (2018); Ghosh et al.\ (2020); Esser et al.\ (2021); Rombach et al.\ (2022).}
 \end{frame}
 
 % ======================================================================
