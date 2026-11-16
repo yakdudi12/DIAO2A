@@ -9,6 +9,8 @@ Bloques con los sprites de data/pokemon (64x64, misma partición, arquitectura y
 Bloque con el arte oficial de PokeAPI (data/pokemon_arte, bajado con descargar_arte.py):
   arte128   la variante completa a 128x128, frente + shiny de 1025 especies; la validación retiene
             especies enteras (su frente y su shiny), así ninguna variante de un Pokémon de validación se entrena.
+  arte128_kl01, arte128_kl1, arte128_kl10   arte128 con w_kl = 0,1, 1 y 10: con 1e-6 el posterior queda casi
+            determinista (σ ≈ 0,004) y N(0, I) no genera; más KL debería volver continuo y muestreable el latente.
 
 Cada modelo genera de dos maneras: N(0, I) y una mezcla de k gaussianas ajustada a los μ de entrenamiento.
 Guarda en results/: klgan_<bloque>.pt, klgan_<bloque>.png (vista previa) y klgan_barrido*.json (métricas).
@@ -37,6 +39,7 @@ CONFIG = {
     "arte128": dict(BASE, datos="arte", lado=128, canales=[64, 128, 256, 512, 512], latente=128, epocas=400,
                     inicio_disc=80, desplazar=8, n_val_especies=100, w_lpips=1.0, w_disc=0.5, evolucion=True),
 }
+CONFIG.update({f"arte128_kl{nom}": dict(CONFIG["arte128"], w_kl=w) for nom, w in (("01", 0.1), ("1", 1.0), ("10", 10.0))})
 
 
 def datos_arte(cfg, lado, n_val, seed=0):
@@ -46,7 +49,7 @@ def datos_arte(cfg, lado, n_val, seed=0):
     val = np.random.default_rng(seed).permutation(np.unique(especie))[:n_val]
     te = np.isin(especie, val)
     return dict(X=X, nombres=nombres, Xtr=np.concatenate([X[~te], espejar(X[~te], lado)]), Xte=X[te], lado=lado,
-                shape=(lado, lado, 3))
+                shape=(lado, lado, 3), te=np.where(te)[0])
 
 
 def nitidez(X, lado):
