@@ -16,7 +16,9 @@ de VQGAN (Esser et al., 2021) con regularización KL en lugar de cuantización:
 
 La arquitectura del VAE es la de ``deep_conv.ConvVAE`` (convoluciones 4x4 de paso 2, cabezas densas μ y
 log σ², decodificador con ampliación x2 + convolución 3x3), escrita en torch con diferenciación automática.
-Hacia afuera recibe y devuelve filas aplanadas (N, lado*lado*3) en numpy, igual que ``ConvVAE``.
+Como en Latent Diffusion, adentro las imágenes viven en [-1, 1] y la salida del decodificador es lineal: con
+una sigmoide, el gradiente de L1 se anula al saturar y el modelo colapsa a devolver el fondo blanco.
+Hacia afuera recibe y devuelve filas aplanadas (N, lado*lado*3) en [0, 1], igual que ``ConvVAE``.
 
 Requiere torch y lpips, que no son dependencias del proyecto: se agregan al correr, p. ej.
 ``uv run --with torch --with lpips python correr_klgan.py``.
@@ -41,6 +43,11 @@ def a_tensor(X, lado):
 
 def a_filas(T):
     return T.permute(0, 2, 3, 1).reshape(len(T), -1).detach().cpu().numpy().astype(float)
+
+
+def a_imagen(y):
+    """Salida del decodificador ([-1, 1], sin acotar) -> imagen en [0, 1]."""
+    return ((y + 1) / 2).clamp(0, 1)
 
 
 def correr_imagenes(x, dy, dx):
@@ -75,31 +82,33 @@ class KLVAE(nn.Module):
         self.dec = nn.Sequential(*capas)
 
     def codificar(self, x):
+        """x en [-1, 1]."""
         h = self.enc(x)
         return self.head_mu(h), self.head_lv(h).clamp(-12, 6)
 
-    def logits(self, z):
+    def salida(self, z):
+        """Imagen reconstruida en [-1, 1] (salida lineal, sin acotar)."""
         return self.dec(self.fc(z).view(len(z), self.cb, self.base, self.base))
 
     def forward(self, x):
         mu, lv = self.codificar(x)
         z = mu + torch.exp(0.5 * lv) * torch.randn_like(mu)
-        return torch.sigmoid(self.logits(z)), mu, lv
+        return self.salida(z), mu, lv
 
     @torch.no_grad()
     def encode(self, X, tanda=256):
         self.eval()
         mus, lvs = [], []
         for i in range(0, len(X), tanda):
-            mu, lv = self.codificar(a_tensor(X[i:i + tanda], self.lado))
+            mu, lv = self.codificar(2 * a_tensor(X[i:i + tanda], self.lado) - 1)
             mus.append(mu.cpu().numpy()); lvs.append(lv.cpu().numpy())
         return np.concatenate(mus).astype(float), np.concatenate(lvs).astype(float)
 
     @torch.no_grad()
     def decode(self, Z, tanda=256):
         self.eval()
-        return np.concatenate([a_filas(torch.sigmoid(self.logits(torch.as_tensor(np.asarray(Z[i:i + tanda]), dtype=torch.float32,
-                                                                                  device=DISPOSITIVO))))
+        return np.concatenate([a_filas(a_imagen(self.salida(torch.as_tensor(np.asarray(Z[i:i + tanda]), dtype=torch.float32,
+                                                                             device=DISPOSITIVO))))
                                for i in range(0, len(Z), tanda)])
 
     def reconstruct(self, X):
@@ -130,7 +139,7 @@ class Discriminador(nn.Module):
 
 
 class Perceptual(nn.Module):
-    """LPIPS con AlexNet (pesos congelados) sobre imágenes en [0, 1], ampliadas a ``lado`` píxeles."""
+    """LPIPS con AlexNet (pesos congelados) sobre imágenes en [-1, 1], ampliadas a ``lado`` píxeles."""
 
     def __init__(self, lado=128):
         super().__init__()
@@ -143,7 +152,7 @@ class Perceptual(nn.Module):
         if a.shape[-1] != self.lado:
             a = F.interpolate(a, size=self.lado, mode="bilinear", align_corners=False)
             b = F.interpolate(b, size=self.lado, mode="bilinear", align_corners=False)
-        return self.red(2 * a - 1, 2 * b - 1)
+        return self.red(a, b)
 
 
 def kl_normal(mu, lv):
@@ -152,19 +161,19 @@ def kl_normal(mu, lv):
 
 @torch.no_grad()
 def evaluar(vae, X, perc=None, tanda=128):
-    """Medias por imagen decodificando μ: BCE (nats, comparable con deep_conv), L1, LPIPS y KL."""
+    """Medias por imagen decodificando μ: BCE (nats, comparable con deep_conv), L1 en [0, 1], LPIPS y KL."""
     vae.eval()
     tot = dict(bce=0.0, l1=0.0, lpips=0.0, kl=0.0)
     for i in range(0, len(X), tanda):
         x = a_tensor(X[i:i + tanda], vae.lado)
-        mu, lv = vae.codificar(x)
-        lg = vae.logits(mu)
-        xh = torch.sigmoid(lg)
-        tot["bce"] += float(F.binary_cross_entropy_with_logits(lg, x, reduction="sum"))
+        mu, lv = vae.codificar(2 * x - 1)
+        y = vae.salida(mu)
+        xh = a_imagen(y)
+        tot["bce"] += float(F.binary_cross_entropy(xh.clamp(1e-6, 1 - 1e-6), x, reduction="sum"))
         tot["l1"] += float((x - xh).abs().sum())
         tot["kl"] += float(kl_normal(mu, lv).sum())
         if perc is not None:
-            tot["lpips"] += float(perc(xh, x).sum())
+            tot["lpips"] += float(perc(y, 2 * x - 1).sum())
     return {k: v / len(X) for k, v in tot.items()}
 
 
@@ -190,6 +199,7 @@ def entrenar(vae, Xtr, Xval, epocas, lr=2e-4, tanda=64, w_kl=1e-6, w_lpips=1.0, 
             xb = X[idx[s:s + tanda]]
             if desplazar:
                 xb = correr_imagenes(xb, *(int(v) for v in rng.integers(-desplazar, desplazar + 1, 2)))
+            xb = 2 * xb - 1
             xh, mu, lv = vae(xb)
             rec = (xb - xh).abs()
             if perc is not None:
@@ -198,7 +208,7 @@ def entrenar(vae, Xtr, Xval, epocas, lr=2e-4, tanda=64, w_kl=1e-6, w_lpips=1.0, 
             kl = kl_normal(mu, lv).mean()
             loss = nll + w_kl * kl
             if con_disc:
-                g = -D(2 * xh - 1).mean()
+                g = -D(xh).mean()
                 gn = torch.autograd.grad(nll, ultima, retain_graph=True)[0].norm()
                 gg = torch.autograd.grad(g, ultima, retain_graph=True)[0].norm()
                 lam = (gn / (gg + 1e-4)).clamp(0, 1e4).detach() * w_disc
@@ -208,7 +218,7 @@ def entrenar(vae, Xtr, Xval, epocas, lr=2e-4, tanda=64, w_kl=1e-6, w_lpips=1.0, 
             loss.backward()
             opt_g.step()
             if con_disc:
-                ld = 0.5 * (F.relu(1 - D(2 * xb - 1)).mean() + F.relu(1 + D(2 * xh.detach() - 1)).mean())
+                ld = 0.5 * (F.relu(1 - D(xb)).mean() + F.relu(1 + D(xh.detach())).mean())
                 opt_d.zero_grad(set_to_none=True)
                 ld.backward()
                 opt_d.step()
