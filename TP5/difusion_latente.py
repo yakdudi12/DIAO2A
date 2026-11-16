@@ -24,7 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from correr_klgan import CONFIG, OUT, datos_arte, nitidez
-from deep_klgan import DISPOSITIVO, ajustar_gmm, cargar, muestrear_gmm
+from deep_klgan import DISPOSITIVO, a_tensor, ajustar_gmm, cargar, muestrear_gmm
 from experimentos import base_pca, calidad_pokemon, cargar_config, datos_pokemon
 
 T = 1000
@@ -103,13 +103,53 @@ def muestrear(red, n, d, seed=0):
     return z.cpu().numpy()
 
 
-def figura(G, P, lado, ruta, n=12):
+class VecinosLPIPS:
+    """Vecino más cercano por LPIPS (Zhang et al., 2018) dentro de un conjunto de referencia.
+
+    La distancia en píxeles la domina el fondo blanco y la mancha de color; LPIPS compara rasgos de AlexNet
+    (formas, bordes, texturas). Los rasgos normalizados de la referencia se calculan una vez y se guardan en la GPU.
+    """
+
+    def __init__(self, Xref, lado, lado_lpips=128, tanda=128):
+        import lpips
+        self.lp = lpips
+        self.m = lpips.LPIPS(net="alex", verbose=False).to(DISPOSITIVO).eval()
+        self.lado, self.lado_lpips, self.tanda = lado, lado_lpips, tanda
+        self.ref = self.rasgos(Xref)
+
+    @torch.no_grad()
+    def rasgos(self, X):
+        capas = None
+        for i in range(0, len(X), self.tanda):
+            x = 2 * a_tensor(X[i:i + self.tanda], self.lado) - 1
+            if self.lado != self.lado_lpips:
+                x = F.interpolate(x, size=self.lado_lpips, mode="bilinear", align_corners=False)
+            f = [self.lp.normalize_tensor(t).half() for t in self.m.net(self.m.scaling_layer(x))]
+            capas = [[t] for t in f] if capas is None else [c + [t] for c, t in zip(capas, f)]
+        return [torch.cat(c) for c in capas]
+
+    @torch.no_grad()
+    def vecino(self, X, tanda_ref=512):
+        """Para cada fila de X: (distancia LPIPS al vecino más cercano de la referencia, índice del vecino)."""
+        Q = self.rasgos(X)
+        dmin, imin = [], []
+        for i in range(len(X)):
+            d = torch.zeros(len(self.ref[0]), device=DISPOSITIVO)
+            for k, (q, r) in enumerate(zip(Q, self.ref)):
+                for s in range(0, len(r), tanda_ref):
+                    d[s:s + tanda_ref] += self.m.lins[k]((q[i:i + 1].float() - r[s:s + tanda_ref].float()) ** 2).mean((1, 2, 3))
+            v, j = d.min(0)
+            dmin.append(v.item())
+            imin.append(j.item())
+        return np.array(dmin), np.array(imin)
+
+
+def figura(G, vecinos, P, lado, ruta, n=12):
     import matplotlib
     matplotlib.use("Agg")
     from graficos import fila_comparada
-    vec = np.array([P["Xtr"][np.argmin(((P["Xtr"] - x) ** 2).sum(1))] for x in G["difusion"][:n]])
-    fig = fila_comparada([G["difusion"][:n], vec, G["gmm10"][:n]],
-                         ["Difusión latente", "Vecino real más\ncercano", "GMM k=10"], (lado, lado, 3), tam=1.2)
+    fig = fila_comparada([G["difusion"][:n], P["Xtr"][vecinos[:n]], G["gmm10"][:n]],
+                         ["Difusión latente", "Vecino real más\ncercano (LPIPS)", "GMM k=10"], (lado, lado, 3), tam=1.2)
     fig.savefig(ruta, dpi=130, bbox_inches="tight")
 
 
@@ -127,7 +167,9 @@ if __name__ == "__main__":
     pasos = int(sys.argv[2]) if len(sys.argv) > 2 else 30000
     red, hist = entrenar_difusion((mu - m) / s, pasos=pasos, log_every=max(2000, pasos // 20))
     n = cfg["ej2_pokemon"]["muestras_calidad"]
-    G = {"difusion": vae.decode(muestrear(red, n, mu.shape[1]) * s + m)}
+    Zd = muestrear(red, n, mu.shape[1]) * s + m
+    torch.save(dict(denoiser=red.state_dict(), media=m, desvio=s, codigos=Zd, hist=hist), OUT / f"difusion_{nombre}.pt")
+    G = {"difusion": vae.decode(Zd)}
     for k in (10, 20):
         G[f"gmm{k}"] = vae.decode(muestrear_gmm(ajustar_gmm(mu, k), n))
     res = dict(bloque=nombre, hist=hist, nitidez_real=float(np.median(nitidez(P["Xte"], b["lado"]))))
@@ -135,6 +177,16 @@ if __name__ == "__main__":
         res[k] = dict(**calidad_pokemon(vae, P, cfg, rasgos=rasgos, G=Gk), nitidez=float(np.median(nitidez(Gk, b["lado"]))))
         print(f"{k:9} Fréchet {res[k]['fd']:.1f} (piso {res[k]['fd_ref']:.1f}) | nitidez {res[k]['nitidez']:.3f} "
               f"(real {res['nitidez_real']:.3f}) | casi copias {res[k]['frac_copia']:.3f}", flush=True)
+    vec = VecinosLPIPS(P["Xtr"], b["lado"])
+    d_real, _ = vec.vecino(P["Xte"])
+    res["lpips_vecino_real_med"] = float(np.median(d_real))
+    for k in ("difusion", "gmm10"):
+        d, idx = vec.vecino(G[k][:500])
+        res[k].update(lpips_vecino_med=float(np.median(d)), frac_copia_lpips=float((d < 0.5 * np.median(d_real)).mean()))
+        if k == "difusion":
+            vecinos = idx
+        print(f"{k:9} LPIPS al vecino de entrenamiento: mediana {np.median(d):.3f} (especie real nueva {np.median(d_real):.3f}) "
+              f"| casi copias por LPIPS {res[k]['frac_copia_lpips']:.3f}", flush=True)
     (OUT / f"difusion_{nombre}.json").write_text(json.dumps(res, indent=1, default=float))
-    figura(G, P, b["lado"], OUT / f"difusion_{nombre}.png")
+    figura(G, vecinos, P, b["lado"], OUT / f"difusion_{nombre}.png")
     print("listo", flush=True)
