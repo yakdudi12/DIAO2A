@@ -35,6 +35,10 @@ CONFIG = {
                  "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64, "calentamiento": 50, "log_every": 10},
     "bloque_b": {"lado": 64, "canales": [64, 128, 256, 512], "latente": 64, "betas": [1.0], "desplazar": [4],
                  "semillas": [0], "epocas": 3000, "lr": 5e-4, "tanda": 64, "calentamiento": 100, "log_every": 25},
+    "bloque_c": {"lado": 32, "canales": [32, 64, 128], "latente": 32, "betas": [1.0], "desplazar": [0, 2], "alfa": True,
+                 "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64, "calentamiento": 50, "log_every": 10},
+    "bloque_d": {"lado": 64, "canales": [64, 128, 256, 512], "latente": 64, "betas": [1.0], "desplazar": [4], "alfa": True,
+                 "semillas": [0], "epocas": 3000, "lr": 5e-4, "tanda": 64, "calentamiento": 100, "log_every": 25},
 }
 OUT = AQUI / "results"
 
@@ -68,18 +72,19 @@ def correr_bloque(nombre, filas, ruta):
     for desp in b["desplazar"]:
         for beta in b["betas"]:
             for s in (b["semillas"][:1] if RAPIDO else b["semillas"]):
-                etiqueta = f"ej2b_L{b['lado']}_b{beta:g}_a{desp}_s{s}"
+                alfa = b.get("alfa", False)
+                etiqueta = f"ej2b_L{b['lado']}_b{beta:g}_a{desp}_s{s}" + ("_alfa" if alfa else "")
                 if any(f["etiqueta"] == etiqueta for f in filas):
                     continue
                 t = time.time()
-                m = ConvVAE(b["lado"], b["canales"], b["latente"], beta=beta, seed=s)
+                m = ConvVAE(b["lado"], b["canales"], b["latente"], beta=beta, seed=s, alfa=alfa)
                 epocas = 2 if RAPIDO else b["epocas"]
                 hist, mejor = m.fit(P["Xtr"][:128] if RAPIDO else P["Xtr"], P["Xte"], epocas, lr=b["lr"], tanda=b["tanda"],
                                     calentamiento=0 if RAPIDO else b["calentamiento"], desplazar=desp,
                                     log_every=b["log_every"],
                                     aviso=(lambda r: print(f"   época {r['epoch']:.0f}: rec {r['rec']:.0f} kl {r['kl']:.1f} | "
                                                            f"val rec {r['rec_val']:.0f} kl {r['kl_val']:.1f} | {r['seg']:.0f} s", flush=True))
-                                    if nombre == "bloque_b" else None)
+                                    if b["lado"] == 64 else None)
                 final = m.copiar_params()
                 cal = 0 if RAPIDO else b["calentamiento"]
                 ep_mejor = min((r for r in hist if r["epoch"] >= cal),

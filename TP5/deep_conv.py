@@ -38,9 +38,36 @@ def sigmoid(z):
     return 1.0 / (1.0 + xp.exp(-xp.clip(z, -60, 60)))
 
 
+def bce_elem(z, x):
+    """BCE estable desde logits, por elemento."""
+    return xp.maximum(z, 0) - z * x + xp.log1p(xp.exp(-xp.abs(z)))
+
+
 def bce_logits(z, x):
     """BCE estable desde logits, suma por muestra (igual que deep.bce_from_logits)."""
-    return (xp.maximum(z, 0) - z * x + xp.log1p(xp.exp(-xp.abs(z)))).sum(1)
+    return bce_elem(z, x).sum(1)
+
+
+def bce_prob(p, x):
+    """BCE desde probabilidades, suma por muestra (para la imagen compuesta del modelo con alfa)."""
+    p = xp.clip(p, 1e-7, 1 - 1e-7)
+    return -(x * xp.log(p) + (1 - x) * xp.log(1 - p)).sum(1)
+
+
+def mascara_figura(x4, umbral=0.95):
+    """1 donde el píxel no es fondo blanco (algún canal < umbral), mismo criterio que datos.cargar_pokemon."""
+    return (x4 < umbral).any(-1).astype(x4.dtype)
+
+
+def dilatar(m):
+    """Dilatación 3x3 de una máscara (N, alto, ancho): el contorno de la figura cuenta como figura."""
+    h, w = m.shape[1:]
+    p = xp.pad(m, ((0, 0), (1, 1), (1, 1)))
+    out = p[:, 1:h + 1, 1:w + 1]
+    for i in range(3):
+        for j in range(3):
+            out = xp.maximum(out, p[:, i:i + h, j:j + w])
+    return out
 
 
 # --------------------------------------------------------------------------- capas
@@ -153,10 +180,16 @@ class ConvVAE:
     lado por 2), y dos cabezas densas (μ y log σ²).
     Decodificador: densa + ReLU, y por cada nivel [ampliar x2, convolución 3x3, ReLU]; al final una
     convolución 3x3 que devuelve los logits de los 3 canales.
+
+    Con ``alfa=True`` el decodificador devuelve 4 canales: color (RGB) y silueta (alfa). La silueta se
+    aprende con BCE en todos los píxeles contra la máscara de figura de x, el color sólo dentro de la
+    figura (máscara dilatada 1 píxel para incluir el contorno), y la imagen se compone sobre blanco:
+    alfa·color + (1 − alfa). El fondo no gasta capacidad de color.
     """
 
-    def __init__(self, lado, canales, latente, beta=1.0, seed=0, dt="float32"):
+    def __init__(self, lado, canales, latente, beta=1.0, seed=0, dt="float32", alfa=False):
         rng = np.random.default_rng(seed)
+        self.alfa = alfa
         self.lado, self.canales, self.latent, self.beta, self.dt = lado, tuple(canales), latente, beta, dt
         self.d_in, self.rng = lado * lado * 3, rng
         self.base, self.cb = lado // 2 ** len(canales), canales[-1]
@@ -171,7 +204,7 @@ class ConvVAE:
         for c in list(reversed(canales[:-1])) + [canales[0]]:
             self.dec += [Ampliar(), Conv(c0, c, 3, 1, 1, rng, dt), ReLU()]
             c0 = c
-        self.dec += [Conv(c0, 3, 3, 1, 1, rng, dt)]
+        self.dec += [Conv(c0, 4 if alfa else 3, 3, 1, 1, rng, dt)]
         self._capas = self.enc + [self.head_mu, self.head_lv, self.fc] + self.dec
 
     @property
@@ -196,6 +229,27 @@ class ConvVAE:
             g = c.forward(g)
         return g.reshape(len(z), -1)
 
+    def _rec(self, lg, x):
+        """BCE de reconstrucción por muestra y su gradiente respecto de los logits."""
+        if not self.alfa:
+            return bce_logits(lg, x), sigmoid(lg) - x
+        n, L = len(x), self.lado
+        g, x4 = lg.reshape(n, L, L, 4), x.reshape(n, L, L, 3)
+        m = mascara_figura(x4)
+        md = dilatar(m)[..., None]
+        la, lc = g[..., 3], g[..., :3]
+        rec = bce_elem(la, m).sum((1, 2)) + (md * bce_elem(lc, x4)).sum((1, 2, 3))
+        dg = xp.concatenate([md * (sigmoid(lc) - x4), (sigmoid(la) - m)[..., None]], axis=-1)
+        return rec, dg.reshape(n, -1)
+
+    def _imagen(self, lg):
+        """Probabilidades RGB aplanadas (N, lado*lado*3); con alfa, color compuesto sobre blanco."""
+        if not self.alfa:
+            return sigmoid(lg)
+        g = lg.reshape(len(lg), self.lado, self.lado, 4)
+        a = sigmoid(g[..., 3:])
+        return (a * sigmoid(g[..., :3]) + 1 - a).reshape(len(lg), -1)
+
     def loss_grads(self, x, beta=None, eps=None):
         beta = self.beta if beta is None else beta
         n = len(x)
@@ -205,11 +259,11 @@ class ConvVAE:
             eps = xp.asarray(self.rng.standard_normal(mu.shape), dtype=self.dt)
         z = mu + xp.exp(0.5 * lv) * eps                      # reparametrización
         lg = self._decodificar(z)
-        rec = bce_logits(lg, x)
+        rec, dlg = self._rec(lg, x)
         kl = 0.5 * (mu ** 2 + xp.exp(lv) - lv - 1).sum(1)
         loss = (rec + beta * kl).mean()
         # --- gradientes (misma cuenta que deep.VAE, capa por capa hacia atrás)
-        d = ((sigmoid(lg) - x) / n).reshape(n, self.lado, self.lado, 3)
+        d = (dlg / n).reshape(n, self.lado, self.lado, -1)
         for c in reversed(self.dec):
             d = c.backward(d)
         dz = self.fc.backward(d.reshape(n, -1))
@@ -230,20 +284,22 @@ class ConvVAE:
         return np.concatenate(mus).astype(float), np.concatenate(lvs).astype(float)
 
     def decode(self, Z, tanda=256):
-        return np.concatenate([a_numpy(sigmoid(self._decodificar(xp.asarray(Z[i:i + tanda], dtype=self.dt))))
+        return np.concatenate([a_numpy(self._imagen(self._decodificar(xp.asarray(Z[i:i + tanda], dtype=self.dt))))
                                for i in range(0, len(Z), tanda)]).astype(float)
 
     def reconstruct(self, X):
         return self.decode(self.encode(X)[0])
 
     def evaluar(self, X, tanda=256):
-        """(BCE de reconstrucción decodificando μ, KL) medios, en nats por imagen."""
+        """(BCE de reconstrucción decodificando μ, KL) medios, en nats por imagen.
+        Con alfa la BCE es la de la imagen compuesta, comparable con la del modelo sin alfa."""
         rec = kl = 0.0
         for i in range(0, len(X), tanda):
             x = xp.asarray(X[i:i + tanda], dtype=self.dt)
             mu, lv = self._codificar(x)
             lv = xp.clip(lv, -12, 6)
-            rec += float(bce_logits(self._decodificar(mu), x).sum())
+            lg = self._decodificar(mu)
+            rec += float((bce_prob(self._imagen(lg), x) if self.alfa else bce_logits(lg, x)).sum())
             kl += float((0.5 * (mu ** 2 + xp.exp(lv) - lv - 1)).sum())
         return rec / len(X), kl / len(X)
 
@@ -301,24 +357,29 @@ def guardar_conv(ruta, modelo, hist, params=None):
     claves = sorted(hist[0])
     np.savez_compressed(ruta, *(params or modelo.copiar_params()),
                         hist=np.array([[r[k] for k in claves] for r in hist]), claves=np.array(claves),
-                        arq=np.array([modelo.lado, modelo.latent, *modelo.canales]), beta=modelo.beta)
+                        arq=np.array([modelo.lado, modelo.latent, *modelo.canales]), beta=modelo.beta,
+                        alfa=modelo.alfa)
 
 
 def cargar_conv(ruta):
     with np.load(ruta) as f:
         arq = [int(a) for a in f["arq"]]
-        m = ConvVAE(arq[0], arq[2:], arq[1], beta=float(f["beta"]))
+        m = ConvVAE(arq[0], arq[2:], arq[1], beta=float(f["beta"]), alfa="alfa" in f.files and bool(f["alfa"]))
         m.poner_params([f[f"arr_{i}"] for i in range(len(m.params))])
         hist = [dict(zip([str(k) for k in f["claves"]], map(float, r))) for r in f["hist"]]
     return m, hist
 
 
-def chequeo_gradiente(eps=1e-5, seed=0, por_param=8):
+def chequeo_gradiente(eps=1e-5, seed=0, por_param=8, alfa=False):
     """Diferencias finitas contra la retropropagación a mano (float64, ruido de reparametrización fijo).
     Devuelve el error relativo máximo sobre ``por_param`` entradas al azar de cada tensor de parámetros."""
     rng = np.random.default_rng(seed)
-    m = ConvVAE(8, (3, 4), 3, beta=0.7, seed=seed, dt="float64")
-    x = xp.asarray(rng.random((4, 8 * 8 * 3)))
+    m = ConvVAE(8, (3, 4), 3, beta=0.7, seed=seed, dt="float64", alfa=alfa)
+    for c in m._capas:
+        if c.params:
+            c.b[...] = xp.asarray(rng.normal(0.0, 0.1, c.b.shape))
+    r = rng.random((4, 8 * 8, 1)) * np.ones(3)
+    x = xp.asarray(np.where(r > 0.5, 1.0, r).reshape(4, -1))
     e = xp.asarray(rng.standard_normal((4, 3)))
     g = m.loss_grads(x, eps=e)[3]
     peor = 0.0
