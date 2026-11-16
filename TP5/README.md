@@ -368,6 +368,88 @@ inventada desde cero; más nitidez implica más parecido a la base; y las 12 mos
 una búsqueda sobre 3000 candidatos, no son una muestra típica. El notebook corre en CPU en
 un par de minutos y necesita `deep_conv.py` y `results/ej2b_L64_b1_a4_s0_final.npz`.
 
+## Ejercicio 2 extendido: nitidez
+
+Las muestras del 2b tienen dos problemas con causas distintas: son **borrosas**, porque la
+pérdida por píxel premia el promedio de las imágenes posibles, y **fragmentadas**, porque
+N(0, I) cae fuera de la región que ocupan los códigos.
+
+### Lo que no alcanzó
+
+**Forzar bordes en el VAE escrito a mano** (`deep_conv.py` con `alfa=True` y `bordes=λ`;
+`correr_ej2b.py`, bloques `bloque_c` y `bloque_e`; 32×32, β = 1, 3 semillas). El decodificador
+separa silueta (alfa) y color; la silueta se rellena desde el borde, validada contra el canal
+alfa real de los 721 PNG (figura marcada como fondo: 2,4 % → 0 %). Se suma la pérdida de bordes
+λ·Σ|∇x̂ − ∇x| (Mathieu et al., 2016). Fréchet (piso 4,1):
+
+| sin alfa | λ = 0 | λ = 0,1 | λ = 0,3 | λ = 1 |
+|---|---|---|---|---|
+| **5,2** | 5,7 | 6,5 | 7,0 | 7,6 |
+
+Cuanto más peso a los bordes, peor; la nitidez no cambia.
+
+**Muestrear mejor el modelo de 64×64 sin reentrenar.** Mezcla de gaussianas sobre los códigos μ
+de entrenamiento en lugar de N(0, I) (Ghosh et al., 2020):
+
+| Muestreo | Fréchet (piso 16,6) | Nitidez |
+|---|---|---|
+| N(0, I) | 28,5 | 0,108 |
+| Temperatura 0,6 | 44,6 | 0,082 |
+| Mezcla de 20 gaussianas | **15,9** | 0,103 |
+
+Las muestras llegan al piso, pero la nitidez sigue lejos de la de un sprite real (0,252): el
+borroneo está en la pérdida.
+
+### [Extra] KL-VAE con LPIPS y PatchGAN (`deep_klgan.py`, `correr_klgan.py`)
+
+Es el autoencoder de la primera etapa de Latent Diffusion (Rombach et al., 2022), con la pérdida
+de VQGAN (Esser et al., 2021): Σ(|x − x̂| + LPIPS) + 10⁻⁶·KL + λ·L_G. LPIPS usa AlexNet
+preentrenada (Zhang et al., 2018); L_G es un discriminador PatchGAN con pérdida *hinge* y peso
+adaptativo, encendido tarde. La arquitectura es la del `ConvVAE` del 2b, con salida lineal en
+[−1, 1]. Esta extensión **usa PyTorch**; torch y lpips no son dependencias del proyecto:
+
+```bash
+uv run --no-project --with torch --with lpips --with numpy --with pillow --with scikit-learn \
+  --with matplotlib --index https://download.pytorch.org/whl/cu126 python correr_klgan.py arte128
+```
+
+**Por separado, con los sprites a 64×64** (bloques `l1`, `lpips` y `completo`), la nitidez de las
+reconstrucciones pasa de 0,10 (sólo L1) a 0,16 (+ LPIPS) y a **0,25** (+ PatchGAN), la de los
+sprites reales.
+
+**Fusión con más datos (bloque `arte128`).** `descargar_arte.py` baja el arte oficial de PokeAPI
+(frente y shiny de las 1025 especies, 475×475) a `data/pokemon_arte/`, que no se versiona. Se
+entrena a 128×128 con 100 especies enteras retenidas para validación (su frente y su shiny) y
+3700 imágenes de entrenamiento con espejado; 400 épocas, discriminador desde la 80, ~1 h en una
+RTX 3090. Cada 25 épocas se guarda una vista previa en `results/evolucion_arte128/`.
+
+| Métrica | Valor |
+|---|---|
+| LPIPS de reconstrucción, especies no vistas | 0,250 |
+| Nitidez de reconstrucción (reales 0,167) | 0,187 |
+| LPIPS al vecino de entrenamiento, mezcla de 10 gaussianas (especie real nueva: 0,364) | 0,349 |
+| Casi copias por LPIPS | 0 % |
+
+- Las reconstrucciones de especies no vistas conservan color (incluido el shiny), silueta y
+  contornos. Al encenderse el discriminador (época 100) todo se tiñe de naranja; desde la 200
+  se recupera. La validación se estanca y el discriminador va ganando: más épocas aportan poco.
+- **El espacio latente es continuo entre códigos** (`interpolar.py`): las interpolaciones son
+  graduales, pero con 10⁻⁶·KL el posterior es casi determinista (σ ≈ 0,0025 contra 2,97 de
+  distancia al código vecino) y N(0, I) no genera (Fréchet 535,6 contra 32,7 de la mezcla de
+  gaussianas; piso 56,0). Interpolar no prueba que un modelo sea generativo.
+- **Generar desde los códigos:** con una mezcla de 100 gaussianas cada componente cubre ~37
+  Pokémon parecidos y las muestras se acercan a una especie real sin copiarla (LPIPS al vecino
+  0,332 contra 0,349 con k = 10).
+- `deep_klgan.VecinosLPIPS` busca el vecino más cercano por LPIPS: la distancia en píxeles la
+  domina el fondo blanco y no sirve para juzgar parecido ni copias.
+
+Los modelos y resultados de esta sección (`results/klgan_*`, `evolucion_*`) no se versionan por su
+tamaño; las figuras usadas están en `presentacion/figs/f_2e_*.png`.
+
+**Próximos pasos:** más datos y con más variedad por especie; aumento de datos, también antes del
+discriminador (DiffAugment); y otras arquitecturas, como modelos de difusión sobre el espacio
+latente (la prueba que hicimos fue preliminar y no alcanza para descartarlos).
+
 ## Estructura
 
 ```text
@@ -382,16 +464,22 @@ TP5/
 ├── graficos.py                    #Funciones de gráfico de los notebooks
 ├── correr_ej2.py                  #Barrido del ejercicio 2 con símbolos para un tamaño de latente
 ├── correr_ej2_pokemon.py          #Barrido β × latente del VAE de Pokémon, en paralelo
-├── deep_conv.py                   #Ejercicio 2b: convolución, retropropagación y VAE a mano (numpy o cupy)
-├── correr_ej2b.py                 #Ejercicio 2b: entrenamiento de las 13 redes (GPU)
+├── deep_conv.py                   #Ejercicio 2b: convolución, retropropagación y VAE a mano (numpy o cupy), con canal alfa y pérdida de bordes
+├── correr_ej2b.py                 #Ejercicio 2b: bloques A y B (13 redes) y C y E (alfa + bordes) (GPU)
 ├── armar_kaggle.py                #Ejercicio 2b: arma el notebook que corre en Kaggle
+├── deep_klgan.py                  #Extra: KL-VAE con LPIPS y PatchGAN (torch), mezcla de gaussianas y vecino por LPIPS
+├── correr_klgan.py                #Extra: bloques l1, lpips, completo (64×64) y arte128 (128×128)
+├── descargar_arte.py              #Extra: baja el arte oficial de PokeAPI a data/pokemon_arte/
+├── interpolar.py                  #Extra: interpolaciones entre códigos y tamaño de σ
+├── presentacion/                  #Presentación (TP5_presentacion.tex) y sus figuras
 ├── config.json                    #Hiperparámetros y semillas
 ├── SIATP5.pdf                     #Enunciado
 ├── implementations/
 │   └── ejercicio2.ipynb           #Implementación anterior del ejercicio 2 (símbolos matemáticos)
 ├── data/
 │   ├── font.h                     #32 caracteres de 7×5 (0x60 a 0x7f)
-│   └── pokemon/                   #809 sprites de 120×120 (PNG y JPG)
+│   ├── pokemon/                   #809 sprites de 120×120 (PNG y JPG)
+│   └── pokemon_arte/              #Extra: arte oficial de PokeAPI (no se versiona; lo baja descargar_arte.py)
 └── results/
     ├── ej1a_barrido.json          #Barrido de arquitectura y optimizador
     ├── ej1b_barrido.json          #Barrido del denoising autoencoder
@@ -423,3 +511,13 @@ TP5/
 - Bowman et al. (2016), *Generating sentences from a continuous space*, CoNLL.
 - Heusel et al. (2017), *GANs trained by a two time-scale update rule converge to a local
   Nash equilibrium*, NeurIPS.
+- Mathieu, Couprie & LeCun (2016), *Deep multi-scale video prediction beyond mean square
+  error*, ICLR.
+- Isola et al. (2017), *Image-to-image translation with conditional adversarial networks*, CVPR.
+- Zhang et al. (2018), *The unreasonable effectiveness of deep features as a perceptual
+  metric*, CVPR.
+- Ghosh et al. (2020), *From variational to deterministic autoencoders*, ICLR.
+- Zhao et al. (2020), *Differentiable augmentation for data-efficient GAN training*, NeurIPS.
+- Esser, Rombach & Ommer (2021), *Taming transformers for high-resolution image synthesis*,
+  CVPR.
+- Rombach et al. (2022), *High-resolution image synthesis with latent diffusion models*, CVPR.
