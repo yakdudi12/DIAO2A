@@ -81,7 +81,9 @@ def correr_bloque(nombre, filas, ruta):
                                                            f"val rec {r['rec_val']:.0f} kl {r['kl_val']:.1f} | {r['seg']:.0f} s", flush=True))
                                     if nombre == "bloque_b" else None)
                 final = m.copiar_params()
-                ep_mejor = min(hist, key=lambda r: r["val_elbo"] if beta > 0 else r["rec_val"])["epoch"]
+                cal = 0 if RAPIDO else b["calentamiento"]
+                ep_mejor = min((r for r in hist if r["epoch"] >= cal),
+                               key=lambda r: r["val_elbo"] if beta > 0 else r["rec_val"])["epoch"]
                 for punto, params, ep in (("final", final, epocas), ("mejor_val", mejor or final, ep_mejor)):
                     m.poner_params(params)
                     filas.append(dict(etiqueta=etiqueta, bloque=nombre, lado=b["lado"], latent=b["latente"], beta=beta,

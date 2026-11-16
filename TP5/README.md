@@ -30,6 +30,17 @@ el kernel tiene que arrancar en `TP5/` (es lo que hace VS Code por defecto).
 | `ejercicio2c_pokemon_cerca_de_datos.ipynb` | Ejercicio 2c: un Pokémon nuevo más nítido, generando cerca de los datos con el modelo del 2b |
 | `implementations/ejercicio2.ipynb` | Implementación anterior del ejercicio 2: VAE sobre símbolos matemáticos |
 
+Los nombres "2b" y "2c" de los notebooks son extensiones propias y no coinciden con los
+incisos del enunciado. Dónde se responde cada inciso:
+
+| Inciso del enunciado | Dónde |
+|---|---|
+| 1a (autoencoder, latente 2-D, letra nueva) | `ejercicio1.ipynb` |
+| 1b (denoising autoencoder) | `ejercicio1.ipynb` |
+| 2a (conjunto de datos nuevo) | `ejercicio2_pokemon.ipynb` (Pokémon) e `implementations/ejercicio2.ipynb` (símbolos) |
+| 2b (esquema variacional) | `deep.VAE`, usado en `ejercicio2_pokemon.ipynb` e `implementations/ejercicio2.ipynb` |
+| 2c (generar una muestra nueva) | `ejercicio2_pokemon.ipynb` e `implementations/ejercicio2.ipynb`; mejoras en `ejercicio2b_pokemon_conv.ipynb` y `ejercicio2c_pokemon_cerca_de_datos.ipynb` |
+
 Todos los hiperparámetros y semillas están en `config.json`. Los barridos del ejercicio 1
 ya calculados están en `results/`. Si esos archivos existen, el notebook los lee y corre en
 unos 15 segundos. Si se borran, los recalcula (unas 130 redes, varios minutos).
@@ -40,8 +51,9 @@ Los notebooks del ejercicio 2 también leen sus barridos de `results/`:
   `results/ej2p_*.npz`, que genera `python correr_ej2_pokemon.py 8` (24 redes en 8 procesos,
   unos 25 minutos). Con esos archivos el notebook corre en unos 15 segundos. Sin el barrido
   lo recalcula en serie, y sin los modelos los reentrena.
-- `implementations/ejercicio2.ipynb` necesita `results/ej2_beta_d{2,8,16}.json`, que se
-  generan con `python correr_ej2.py 2`, `8` y `16` desde `TP5/`. El notebook busca los
+- `implementations/ejercicio2.ipynb` lee `results/ej2_beta_d{2,8,16}.json`, que se
+  generan con `python correr_ej2.py 2`, `8` y `16` desde `TP5/`. Si falta alguno, el
+  notebook lo recalcula y lo guarda. El notebook busca los
   módulos y `results/` en `TP5/`, así que funciona con el kernel en `TP5/` o en
   `TP5/implementations/`.
 
@@ -221,8 +233,6 @@ sus rasgos internos.
 | 16 | 1 | 13,5 | 12,5 | 13,5 |
 | 16 | 4 | 3,7 | 28,0 | 40,1 |
 
-El piso de la distancia de Fréchet es 14,2.
-
 - **El KL vuelve muestreable el espacio latente.** Con d = 16, las muestras del VAE (β = 1)
   quedan al nivel del piso. El autoencoder con la misma arquitectura queda unas 27 veces más
   lejos.
@@ -385,6 +395,9 @@ TP5/
 └── results/
     ├── ej1a_barrido.json          #Barrido de arquitectura y optimizador
     ├── ej1b_barrido.json          #Barrido del denoising autoencoder
+    ├── ej2_beta_d{2,8,16}.json    #Barrido β del VAE de símbolos, por tamaño de latente
+    ├── ej2_clasificador.json      #Exactitud del juez de símbolos en tipografías no vistas
+    ├── ej2_{vae,ae}_d*.pkl        #Modelos finales de símbolos (β = 1 y β = 0) que guarda correr_ej2.py
     ├── ej2p_barrido.json          #Barrido β × latente del VAE de Pokémon
     ├── ej2p_b*_d*_s0.npz          #Modelos finales de Pokémon (β = 0 y 1, d = 2 y 32)
     ├── ej2b_barrido.json          #Ejercicio 2b: métricas de las 13 redes
