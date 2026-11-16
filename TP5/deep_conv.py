@@ -54,9 +54,43 @@ def bce_prob(p, x):
     return -(x * xp.log(p) + (1 - x) * xp.log(1 - p)).sum(1)
 
 
-def mascara_figura(x4, umbral=0.95):
-    """1 donde el píxel no es fondo blanco (algún canal < umbral), mismo criterio que datos.cargar_pokemon."""
-    return (x4 < umbral).any(-1).astype(x4.dtype)
+def silueta(x4, umbral=0.95):
+    """Silueta rellena (N, alto, ancho): 1 en todo lo que no sea fondo.
+
+    El fondo es el blanco (todos los canales >= umbral) conectado con el borde de la imagen: se siembra con el
+    blanco del borde y se expande a los 4 vecinos sólo a través de píxeles blancos. Un blanco encerrado por el
+    contorno (panzas, brillos) nunca se alcanza y queda como figura.
+    """
+    blanco = (x4 >= umbral).all(-1)
+    f = xp.zeros_like(blanco)
+    f[:, 0, :], f[:, -1, :], f[:, :, 0], f[:, :, -1] = blanco[:, 0, :], blanco[:, -1, :], blanco[:, :, 0], blanco[:, :, -1]
+    for _ in range(blanco.shape[1] * blanco.shape[2]):
+        p = xp.pad(f, ((0, 0), (1, 1), (1, 1)))
+        nuevo = (f | p[:, :-2, 1:-1] | p[:, 2:, 1:-1] | p[:, 1:-1, :-2] | p[:, 1:-1, 2:]) & blanco
+        if bool((nuevo == f).all()):
+            break
+        f = nuevo
+    return (~f).astype(x4.dtype)
+
+
+def bordes_l1(p4, x4, w):
+    """Pérdida de bordes (gradient difference loss, Mathieu et al. 2016, α = 1).
+
+    Σ w·|∇p − ∇x| sobre las diferencias entre vecinos horizontales y verticales, contando un par si alguno de
+    sus dos píxeles tiene peso (w: máscara (N, alto, ancho)). Devuelve la pérdida por muestra y su gradiente
+    respecto de p4 (N, alto, ancho, canales).
+    """
+    e, G = 0.0, xp.zeros_like(p4)
+    for eje in (1, 2):
+        lo = (slice(None),) * eje + (slice(None, -1),)
+        hi = (slice(None),) * eje + (slice(1, None),)
+        r = (p4[hi] - p4[lo]) - (x4[hi] - x4[lo])
+        wm = xp.maximum(w[lo], w[hi])[..., None]
+        e = e + (wm * xp.abs(r)).sum((1, 2, 3))
+        s = wm * xp.sign(r)
+        G[hi] += s
+        G[lo] -= s
+    return e, G
 
 
 def dilatar(m):
@@ -182,14 +216,17 @@ class ConvVAE:
     convolución 3x3 que devuelve los logits de los 3 canales.
 
     Con ``alfa=True`` el decodificador devuelve 4 canales: color (RGB) y silueta (alfa). La silueta se
-    aprende con BCE en todos los píxeles contra la máscara de figura de x, el color sólo dentro de la
-    figura (máscara dilatada 1 píxel para incluir el contorno), y la imagen se compone sobre blanco:
+    aprende con BCE en todos los píxeles contra la silueta rellena de x (ver ``silueta``), el color sólo
+    dentro de ella (dilatada 1 píxel para incluir el contorno), y la imagen se compone sobre blanco:
     alfa·color + (1 − alfa). El fondo no gasta capacidad de color.
+
+    Con ``bordes`` = λ > 0 se suma λ·Σ|∇x̂ − ∇x| sobre la imagen compuesta dentro de la silueta (``bordes_l1``):
+    la BCE prefiere el promedio borroso, este término castiga que falten los bordes que tiene la imagen real.
     """
 
-    def __init__(self, lado, canales, latente, beta=1.0, seed=0, dt="float32", alfa=False):
+    def __init__(self, lado, canales, latente, beta=1.0, seed=0, dt="float32", alfa=False, bordes=0.0):
         rng = np.random.default_rng(seed)
-        self.alfa = alfa
+        self.alfa, self.bordes = alfa, bordes
         self.lado, self.canales, self.latent, self.beta, self.dt = lado, tuple(canales), latente, beta, dt
         self.d_in, self.rng = lado * lado * 3, rng
         self.base, self.cb = lado // 2 ** len(canales), canales[-1]
@@ -230,17 +267,35 @@ class ConvVAE:
         return g.reshape(len(z), -1)
 
     def _rec(self, lg, x):
-        """BCE de reconstrucción por muestra y su gradiente respecto de los logits."""
-        if not self.alfa:
+        """Pérdida de reconstrucción por muestra y su gradiente respecto de los logits."""
+        if not self.alfa and not self.bordes:
             return bce_logits(lg, x), sigmoid(lg) - x
         n, L = len(x), self.lado
-        g, x4 = lg.reshape(n, L, L, 4), x.reshape(n, L, L, 3)
-        m = mascara_figura(x4)
-        md = dilatar(m)[..., None]
-        la, lc = g[..., 3], g[..., :3]
-        rec = bce_elem(la, m).sum((1, 2)) + (md * bce_elem(lc, x4)).sum((1, 2, 3))
-        dg = xp.concatenate([md * (sigmoid(lc) - x4), (sigmoid(la) - m)[..., None]], axis=-1)
-        return rec, dg.reshape(n, -1)
+        x4 = x.reshape(n, L, L, 3)
+        s = silueta(x4)
+        sd = dilatar(s)
+        if self.alfa:
+            g = lg.reshape(n, L, L, 4)
+            la, lc = g[..., 3], g[..., :3]
+            a, c = sigmoid(la), sigmoid(lc)
+            rec = bce_elem(la, s).sum((1, 2)) + (sd[..., None] * bce_elem(lc, x4)).sum((1, 2, 3))
+            dla, dlc = a - s, sd[..., None] * (c - x4)
+            p4 = a[..., None] * c + 1 - a[..., None]
+        else:
+            p4 = sigmoid(lg).reshape(n, L, L, 3)
+            rec, d = bce_logits(lg, x), p4 - x4
+        if self.bordes:
+            e, G = bordes_l1(p4, x4, sd)
+            rec = rec + self.bordes * e
+            G = self.bordes * G
+            if self.alfa:
+                dlc = dlc + G * a[..., None] * c * (1 - c)
+                dla = dla + (G * (c - 1)).sum(-1) * a * (1 - a)
+            else:
+                d = d + G * p4 * (1 - p4)
+        if self.alfa:
+            return rec, xp.concatenate([dlc, dla[..., None]], axis=-1).reshape(n, -1)
+        return rec, d.reshape(n, -1)
 
     def _imagen(self, lg):
         """Probabilidades RGB aplanadas (N, lado*lado*3); con alfa, color compuesto sobre blanco."""
@@ -358,23 +413,24 @@ def guardar_conv(ruta, modelo, hist, params=None):
     np.savez_compressed(ruta, *(params or modelo.copiar_params()),
                         hist=np.array([[r[k] for k in claves] for r in hist]), claves=np.array(claves),
                         arq=np.array([modelo.lado, modelo.latent, *modelo.canales]), beta=modelo.beta,
-                        alfa=modelo.alfa)
+                        alfa=modelo.alfa, bordes=modelo.bordes)
 
 
 def cargar_conv(ruta):
     with np.load(ruta) as f:
         arq = [int(a) for a in f["arq"]]
-        m = ConvVAE(arq[0], arq[2:], arq[1], beta=float(f["beta"]), alfa="alfa" in f.files and bool(f["alfa"]))
+        m = ConvVAE(arq[0], arq[2:], arq[1], beta=float(f["beta"]), alfa="alfa" in f.files and bool(f["alfa"]),
+                    bordes=float(f["bordes"]) if "bordes" in f.files else 0.0)
         m.poner_params([f[f"arr_{i}"] for i in range(len(m.params))])
         hist = [dict(zip([str(k) for k in f["claves"]], map(float, r))) for r in f["hist"]]
     return m, hist
 
 
-def chequeo_gradiente(eps=1e-5, seed=0, por_param=8, alfa=False):
+def chequeo_gradiente(eps=1e-5, seed=0, por_param=8, alfa=False, bordes=0.0):
     """Diferencias finitas contra la retropropagación a mano (float64, ruido de reparametrización fijo).
     Devuelve el error relativo máximo sobre ``por_param`` entradas al azar de cada tensor de parámetros."""
     rng = np.random.default_rng(seed)
-    m = ConvVAE(8, (3, 4), 3, beta=0.7, seed=seed, dt="float64", alfa=alfa)
+    m = ConvVAE(8, (3, 4), 3, beta=0.7, seed=seed, dt="float64", alfa=alfa, bordes=bordes)
     for c in m._capas:
         if c.params:
             c.b[...] = xp.asarray(rng.normal(0.0, 0.1, c.b.shape))

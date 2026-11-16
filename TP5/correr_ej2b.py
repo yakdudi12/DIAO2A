@@ -35,8 +35,12 @@ CONFIG = {
                  "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64, "calentamiento": 50, "log_every": 10},
     "bloque_b": {"lado": 64, "canales": [64, 128, 256, 512], "latente": 64, "betas": [1.0], "desplazar": [4],
                  "semillas": [0], "epocas": 3000, "lr": 5e-4, "tanda": 64, "calentamiento": 100, "log_every": 25},
-    "bloque_c": {"lado": 32, "canales": [32, 64, 128], "latente": 32, "betas": [1.0], "desplazar": [0, 2], "alfa": True,
-                 "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64, "calentamiento": 50, "log_every": 10},
+    "bloque_c": {"lado": 32, "canales": [32, 64, 128], "latente": 32, "betas": [1.0], "desplazar": [0], "alfa": True,
+                 "bordes": [0.0, 0.1], "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64,
+                 "calentamiento": 50, "log_every": 10},
+    "bloque_e": {"lado": 32, "canales": [32, 64, 128], "latente": 32, "betas": [1.0], "desplazar": [0], "alfa": True,
+                 "bordes": [0.3, 1.0], "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64,
+                 "calentamiento": 50, "log_every": 10},
     "bloque_d": {"lado": 64, "canales": [64, 128, 256, 512], "latente": 64, "betas": [1.0], "desplazar": [4], "alfa": True,
                  "semillas": [0], "epocas": 1500, "lr": 5e-4, "tanda": 64, "calentamiento": 100, "log_every": 25},
 }
@@ -69,15 +73,16 @@ def correr_bloque(nombre, filas, ruta):
     cfg = copy.deepcopy(cargar_config()); cfg["ej2_pokemon"]["lado"] = b["lado"]
     P = datos_pokemon(cfg)
     print(f"\n=== {nombre}: {b['lado']}x{b['lado']}, entrenamiento {P['Xtr'].shape}, validación {P['Xte'].shape}", flush=True)
-    for desp in b["desplazar"]:
+    for desp, lam in [(d_, l_) for d_ in b["desplazar"] for l_ in b.get("bordes", [0.0])]:
         for beta in b["betas"]:
             for s in (b["semillas"][:1] if RAPIDO else b["semillas"]):
                 alfa = b.get("alfa", False)
-                etiqueta = f"ej2b_L{b['lado']}_b{beta:g}_a{desp}_s{s}" + ("_alfa" if alfa else "")
+                etiqueta = (f"ej2b_L{b['lado']}_b{beta:g}_a{desp}_s{s}" + ("_alfa" if alfa else "")
+                            + (f"_g{lam:g}" if "bordes" in b else ""))
                 if any(f["etiqueta"] == etiqueta for f in filas):
                     continue
                 t = time.time()
-                m = ConvVAE(b["lado"], b["canales"], b["latente"], beta=beta, seed=s, alfa=alfa)
+                m = ConvVAE(b["lado"], b["canales"], b["latente"], beta=beta, seed=s, alfa=alfa, bordes=lam)
                 epocas = 2 if RAPIDO else b["epocas"]
                 hist, mejor = m.fit(P["Xtr"][:128] if RAPIDO else P["Xtr"], P["Xte"], epocas, lr=b["lr"], tanda=b["tanda"],
                                     calentamiento=0 if RAPIDO else b["calentamiento"], desplazar=desp,
@@ -92,7 +97,7 @@ def correr_bloque(nombre, filas, ruta):
                 for punto, params, ep in (("final", final, epocas), ("mejor_val", mejor or final, ep_mejor)):
                     m.poner_params(params)
                     filas.append(dict(etiqueta=etiqueta, bloque=nombre, lado=b["lado"], latent=b["latente"], beta=beta,
-                                      desplazar=desp, seed=s, punto=punto, epoca=ep, **medir(m, P, cfg, s)))
+                                      desplazar=desp, alfa=alfa, bordes=lam, seed=s, punto=punto, epoca=ep, **medir(m, P, cfg, s)))
                     if s == b["semillas"][0]:
                         guardar_conv(OUT / f"{etiqueta}_{punto}.npz", m, hist, params)
                         vista_previa(m, b["lado"], OUT / f"{etiqueta}_{punto}.png")
