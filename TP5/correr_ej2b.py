@@ -41,8 +41,6 @@ CONFIG = {
     "bloque_e": {"lado": 32, "canales": [32, 64, 128], "latente": 32, "betas": [1.0], "desplazar": [0], "alfa": True,
                  "bordes": [0.3, 1.0], "semillas": [0, 1, 2], "epocas": 600, "lr": 1e-3, "tanda": 64,
                  "calentamiento": 50, "log_every": 10},
-    "bloque_d": {"lado": 64, "canales": [64, 128, 256, 512], "latente": 64, "betas": [1.0], "desplazar": [4], "alfa": True,
-                 "semillas": [0], "epocas": 1500, "lr": 5e-4, "tanda": 64, "calentamiento": 100, "log_every": 25},
 }
 OUT = AQUI / "results"
 

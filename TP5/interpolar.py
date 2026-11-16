@@ -4,7 +4,7 @@ Si el latente es continuo, decodificar el camino recto entre los códigos μ de 
 de uno al otro; si los códigos son puntos aislados (σ mucho menor que la distancia entre ellos), los puntos
 intermedios caen donde el decodificador nunca entrenó y salen imágenes rotas.
 
-Uso:  uv run --with torch --with lpips python interpolar.py bloque [bloque ...]      (p. ej. arte128 arte128_kl1)
+Uso:  uv run --with torch --with lpips python interpolar.py bloque [bloque ...]      (p. ej. arte128)
 Guarda results/interpolacion_<bloque>.png e imprime σ frente a la dispersión de los códigos.
 """
 import sys
