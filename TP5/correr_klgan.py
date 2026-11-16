@@ -35,7 +35,7 @@ CONFIG = {
     "lpips": dict(BASE, w_lpips=1.0, w_disc=0.0),
     "completo": dict(BASE, w_lpips=1.0, w_disc=0.5),
     "arte128": dict(BASE, datos="arte", lado=128, canales=[64, 128, 256, 512, 512], latente=128, epocas=400,
-                    inicio_disc=80, desplazar=8, n_val_especies=100, w_lpips=1.0, w_disc=0.5),
+                    inicio_disc=80, desplazar=8, n_val_especies=100, w_lpips=1.0, w_disc=0.5, evolucion=True),
 }
 
 
@@ -59,7 +59,7 @@ def nitidez(X, lado):
     return np.array([g[i][m[i]].mean() if m[i].sum() > 20 else 0.0 for i in range(len(I))])
 
 
-def vista_previa(P, vae, G_gmm, G_prior, ruta, n=10):
+def vista_previa(P, vae, G_gmm, G_prior, ruta, n=10, titulo=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -71,6 +71,8 @@ def vista_previa(P, vae, G_gmm, G_prior, ruta, n=10):
         for c in range(n):
             axs[r, c].imshow(np.clip(F_[c].reshape(L, L, 3), 0, 1)); axs[r, c].axis("off")
         axs[r, 0].set_title(nom, fontsize=9, loc="left")
+    if titulo:
+        fig.suptitle(titulo, y=1.01)
     fig.savefig(ruta, dpi=120, bbox_inches="tight"); plt.close(fig)
 
 
@@ -83,12 +85,21 @@ def correr(nombre, filas, cfg):
     print(f"\n=== {nombre}: {P['Xtr'].shape} | {DISPOSITIVO}", flush=True)
     t = time.time()
     vae = KLVAE(b["lado"], b["canales"], b["latente"])
+    carpeta_evol = OUT / f"evolucion_{nombre}"
+    Z_fijo = np.random.default_rng(b["seed"]).standard_normal((10, b["latente"]))
+
+    def aviso(r):
+        print(f"   época {r['epoch']}: nll {r['nll']:.0f} kl {r['kl']:.0f} λ {r['lam']:.3f} D {r['d']:.3f} | val bce "
+              f"{r['bce_val']:.0f} l1 {r['l1_val']:.0f} lpips {r['lpips_val']:.3f} | {r['seg']:.0f} s", flush=True)
+        if b.get("evolucion"):
+            carpeta_evol.mkdir(exist_ok=True)
+            G = vae.decode(muestrear_gmm(ajustar_gmm(vae.encode(P["Xtr"])[0], 10, b["seed"]), 10, b["seed"]))
+            vista_previa(P, vae, G, vae.decode(Z_fijo), carpeta_evol / f"ep{r['epoch']:04d}.png",
+                         titulo=f"{nombre}, época {r['epoch']}")
+
     hist = entrenar(vae, P["Xtr"], P["Xte"], b["epocas"], lr=b["lr"], tanda=b["tanda"], w_kl=b["w_kl"],
                     w_lpips=b["w_lpips"], w_disc=b["w_disc"], inicio_disc=b["inicio_disc"], desplazar=b["desplazar"],
-                    lado_lpips=b["lado_lpips"], log_every=b["log_every"], seed=b["seed"],
-                    aviso=lambda r: print(f"   época {r['epoch']}: nll {r['nll']:.0f} kl {r['kl']:.0f} λ {r['lam']:.3f} "
-                                          f"D {r['d']:.3f} | val bce {r['bce_val']:.0f} l1 {r['l1_val']:.0f} "
-                                          f"lpips {r['lpips_val']:.3f} | {r['seg']:.0f} s", flush=True))
+                    lado_lpips=b["lado_lpips"], log_every=b["log_every"], seed=b["seed"], aviso=aviso)
     guardar(OUT / f"klgan_{nombre}.pt", vae, hist, b)
     v = evaluar(vae, P["Xte"], Perceptual(b["lado_lpips"]).to(DISPOSITIVO))
     mu, _ = vae.encode(P["Xtr"])
