@@ -9,6 +9,7 @@ Bloques con los sprites de data/pokemon (64x64, misma partición, arquitectura y
 Bloque con el arte oficial de PokeAPI (data/pokemon_arte, bajado con descargar_arte.py):
   arte128   la variante completa a 128x128, frente + shiny de 1025 especies; la validación retiene
             especies enteras (su frente y su shiny), así ninguna variante de un Pokémon de validación se entrena.
+  arte128_disc200   arte128 con el discriminador desde la época 200 (en vez de la 80) y 600 épocas.
 
 Cada modelo genera de dos maneras: N(0, I) y una mezcla de k gaussianas ajustada a los μ de entrenamiento.
 Guarda en results/: klgan_<bloque>.pt, klgan_<bloque>.png (vista previa) y klgan_barrido*.json (métricas).
@@ -37,6 +38,7 @@ CONFIG = {
     "arte128": dict(BASE, datos="arte", lado=128, canales=[64, 128, 256, 512, 512], latente=128, epocas=400,
                     inicio_disc=80, desplazar=8, n_val_especies=100, w_lpips=1.0, w_disc=0.5, evolucion=True),
 }
+CONFIG["arte128_disc200"] = dict(CONFIG["arte128"], inicio_disc=200, epocas=600)
 
 
 def datos_arte(cfg, lado, n_val, seed=0):
