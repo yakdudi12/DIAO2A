@@ -448,7 +448,7 @@ tamaño; las figuras usadas están en `presentacion/figs/f_2e_*.png`.
 
 **Próximos pasos:** más datos y con más variedad por especie; aumento de datos, también antes del
 discriminador (DiffAugment); y otras arquitecturas, como modelos de difusión sobre el espacio
-latente (la prueba que hicimos fue preliminar y no alcanza para descartarlos).
+latente.
 
 ## Estructura
 
